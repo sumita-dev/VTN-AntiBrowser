@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 120" width="600" height="120">
+  <defs>
+    <linearGradient id="logoOrangeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFA133" />
+      <stop offset="35%" stop-color="#FF6A00" />
+      <stop offset="80%" stop-color="#F04800" />
+      <stop offset="100%" stop-color="#C72E00" />
+    </linearGradient>
+
+    <linearGradient id="logoRimGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#FFA855" stop-opacity="0.15" />
+    </linearGradient>
+
+    <linearGradient id="textWhiteGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F1F5F9" />
+    </linearGradient>
+
+    <linearGradient id="accentTextGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFA133" />
+      <stop offset="100%" stop-color="#FF5500" />
+    </linearGradient>
+
+    <filter id="logoShadow" x="-10%" y="-10%" width="130%" height="135%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#FF5500" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- App Icon Squircle (Left 100x100) -->
+  <g transform="translate(10, 10)">
+    <g filter="url(#logoShadow)">
+      <rect x="0" y="0" width="100" height="100" rx="23" ry="23" fill="url(#logoOrangeGrad)" />
+    </g>
+    <!-- Polished Inset Rim -->
+    <rect x="0.5" y="0.5" width="99" height="99" rx="22.5" ry="22.5" fill="none" stroke="url(#logoRimGrad)" stroke-width="1.5" />
+
+    <!-- High-Contrast Enlarged Center Emblem -->
+    <g transform="translate(50, 50) scale(0.24)">
+      <!-- Deep Contrast Shield Plate -->
+      <path d="M 0 -144 C 76 -144, 132 -128, 142 -122 C 148 -28, 136 65, 0 152 C -136 65, -148 -28, -142 -122 C -132 -128, -76 -144, 0 -144 Z"
+            fill="rgba(20, 6, 1, 0.75)" />
+
+      <!-- Bold Solid White Shield Frame -->
+      <path d="M 0 -140 C 72 -140, 126 -125, 136 -120 C 141 -28, 130 60, 0 144 C -130 60, -141 -28, -136 -120 C -126 -125, -72 -140, 0 -140 Z"
+            fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+
+      <!-- Browser Bar with Traffic Lights -->
+      <rect x="-88" y="-104" width="176" height="30" rx="9" ry="9" fill="#FFFFFF" />
+      <circle cx="-64" cy="-89" r="6" fill="#FF3B30" />
+      <circle cx="-46" cy="-89" r="6" fill="#FFCC00" />
+      <circle cx="-28" cy="-89" r="6" fill="#34C759" />
+
+      <!-- Monogram VTN Core -->
+      <path d="M -82 -54 L -36 50 L -12 50 L -46 -54 Z" fill="#FFFFFF" />
+      <path d="M 82 -54 L 36 50 L 12 50 L 46 -54 Z" fill="#FFFFFF" />
+      <path d="M -26 -54 L 0 10 L 26 -54 Z" fill="#FFFFFF" />
+      <circle cx="0" cy="56" r="9" fill="#FFFFFF" />
+    </g>
+  </g>
+
+  <!-- Brand Typography -->
+  <g transform="translate(132, 32)">
+    <text x="0" y="32" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif" font-size="34" font-weight="800" fill="url(#textWhiteGrad)" letter-spacing="-0.8">
+      VTN <tspan fill="url(#accentTextGrad)">Anti-Browser</tspan>
+    </text>
+    <text x="0" y="58" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif" font-size="13" font-weight="500" fill="#94A3B8" letter-spacing="0.3">
+      Native C++ Chromium 151 Spoofing Engine • 100% Offline
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "name": "vtn-anti-browser",
+  "version": "1.0.0",
+  "description": "VTN Anti-Browser Antidetect Browser Manager powered by Native C++ Chromium 151 Kernel",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "start:app": "node src/main.js --app-window",
+    "test": "node tests/e2e_verify.js"
+  },
+  "engine": {
+    "node": ">=22.0.0"
+  }
+}

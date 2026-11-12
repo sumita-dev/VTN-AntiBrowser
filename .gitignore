@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Chromium binaries & executables (Core C++ browser engine > 100MB)
+bin/
+
+# Runtime profile data & logs (Zero-leakage for local SQLite & R2 tokens)
+data/
+*.db-journal
+*.log
+
+# GitNexus index, sessions & pytest caches
+.gitnexus/
+.sessions/
+.pytest_cache/
+.claude/
+
+# System & IDE files
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

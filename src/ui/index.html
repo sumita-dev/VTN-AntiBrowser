@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VTN Anti-Browser — Native Chromium 151 Antidetect</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="alternate icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/assets/icon.svg" />
+  <style>
+    :root {
+      --bg-base: #090d16;
+      --bg-surface: rgba(17, 24, 39, 0.88);
+      --bg-surface-solid: #111827;
+      --bg-card: #16202e;
+      --bg-hover: #223046;
+      --border: #28374d;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      /* Apple Vibrant Orange Theme */
+      --accent: #ff6b00;
+      --accent-hover: #ff5500;
+      --accent-gradient: linear-gradient(135deg, #ff8a00 0%, #ff5500 100%);
+      --accent-glow: rgba(255, 107, 0, 0.35);
+      --accent-subtle: rgba(255, 107, 0, 0.12);
+      --accent-border: rgba(255, 107, 0, 0.45);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Inter, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Header — Apple Glassmorphism */
+    header {
+      background: var(--bg-surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      user-select: none;
+    }
+    .brand-logo-container {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 8px 18px var(--accent-glow));
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .brand:hover .brand-logo-container {
+      transform: scale(1.05);
+    }
+    .brand-title h1 {
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-edit-name {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 3px 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      font-size: 11px;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .profile-name-row:hover .btn-edit-name,
+    .btn-edit-name:hover {
+      opacity: 1;
+    }
+    .btn-edit-name:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .brand-title h1 .anti-badge {
+      background: linear-gradient(135deg, #ffa033, #ff5100);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-title p {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.1px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .toast-banner {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #064e3b;
+      border: 1px solid #10b981;
+      color: #ecfdf5;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      display: none;
+    }
+    .toast-banner.active { display: block; }
+    .status-pill {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Buttons — Apple Tactile Polish */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-main);
+      background: var(--bg-card);
+    }
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 4px 14px var(--accent-glow), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ff991a, #ff6610);
+      box-shadow: 0 6px 20px rgba(255, 107, 0, 0.45);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    .btn-auto {
+      background: linear-gradient(135deg, #ff7700 0%, #e04400 100%);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      box-shadow: 0 4px 16px rgba(255, 107, 0, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+    .btn-auto:hover {
+      background: linear-gradient(135deg, #ff881a 0%, #eb4f00 100%);
+      box-shadow: 0 6px 22px rgba(255, 107, 0, 0.48);
+    }
+    .btn-success { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
+    .btn-success:hover { background: rgba(16, 185, 129, 0.35); }
+    .btn-danger { background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.32); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px var(--accent-subtle) !important;
+    }
+
+    /* Main Content */
+    main {
+      padding: 24px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+    }
+
+    /* Stats Row */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-value { font-size: 24px; font-weight: 700; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+    .search-input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 9px 14px;
+      border-radius: 8px;
+      width: 320px;
+      font-size: 13px;
+    }
+
+    /* Profiles Table */
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    th {
+      background: rgba(31, 41, 55, 0.6);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+    .badge-win { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); }
+    .badge-mac { color: #c084fc; border-color: rgba(192, 132, 252, 0.3); }
+    .badge-running { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.4); }
+    .badge-stopped { color: var(--text-muted); }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+    .subtext { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 780px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 20px 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-footer {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group.full { grid-column: span 2; }
+    label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    input, select, textarea {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+    }
+    pre.probe-box {
+      background: #070a12;
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      overflow-x: auto;
+      color: #a7f3d0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-logo-container" title="VTN Anti-Browser">
+        <svg viewBox="0 0 512 512" width="52" height="52" aria-label="VTN Anti-Browser Logo">
+          <defs>
+            <linearGradient id="hdrOrange" x1="0.15" y1="0" x2="0.85" y2="1">
+              <stop offset="0%" stop-color="#FFA133" />
+              <stop offset="30%" stop-color="#FF6A00" />
+              <stop offset="75%" stop-color="#F04800" />
+              <stop offset="100%" stop-color="#C72E00" />
+            </linearGradient>
+            <linearGradient id="hdrRim" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75" />
+              <stop offset="35%" stop-color="#FFA855" stop-opacity="0.3" />
+              <stop offset="100%" stop-color="#000000" stop-opacity="0.4" />
+            </linearGradient>
+            <filter id="hdrEmblemShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#4D1300" flood-opacity="0.75" />
+            </filter>
+          </defs>
+          <rect x="20" y="20" width="472" height="472" rx="108" ry="108" fill="url(#hdrOrange)" />
+          <rect x="22" y="22" width="468" height="468" rx="106" ry="106" fill="none" stroke="url(#hdrRim)" stroke-width="4" />
+          <g transform="translate(256, 256) scale(1.22)" filter="url(#hdrEmblemShadow)">
+            <!-- Deep Contrast Dark Shield Plate -->
+            <path d="M 0 -144 C 76 -144, 132 -128, 142 -122 C 148 -28, 136 65, 0 152 C -136 65, -148 -28, -142 -122 C -132 -128, -76 -144, 0 -144 Z"
+                  fill="rgba(24, 7, 1, 0.78)" />
+            <!-- Solid Bold White Outer Shield -->
+            <path d="M 0 -140 C 72 -140, 126 -125, 136 -120 C 141 -28, 130 60, 0 144 C -130 60, -141 -28, -136 -120 C -126 -125, -72 -140, 0 -140 Z"
+                  fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Solid White Browser Top Bar -->
+            <rect x="-88" y="-104" width="176" height="30" rx="9" ry="9" fill="#FFFFFF" />
+            <circle cx="-64" cy="-89" r="6" fill="#FF3B30" />
+            <circle cx="-46" cy="-89" r="6" fill="#FFCC00" />
+            <circle cx="-28" cy="-89" r="6" fill="#34C759" />
+            <rect x="-10" y="-97" width="90" height="16" rx="8" fill="rgba(30, 10, 2, 0.28)" />
+            <!-- Solid High-Contrast VTN Monogram -->
+            <path d="M -82 -54 L -36 50 L -12 50 L -46 -54 Z" fill="#FFFFFF" />
+            <path d="M 82 -54 L 36 50 L 12 50 L 46 -54 Z" fill="#FFFFFF" />
+            <path d="M -26 -54 L 0 10 L 26 -54 Z" fill="#FFFFFF" />
+            <!-- Radar Arc & Node -->
+            <path d="M -94 14 C -48 56, 48 56, 94 14" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-dasharray="10 7" />
+            <circle cx="0" cy="56" r="9" fill="#FFFFFF" />
+            <circle cx="0" cy="56" r="17" fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.8" />
+          </g>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <h1>VTN <span class="anti-badge">Anti-Browser</span></h1>
+        <p>Native Chromium 151.0.7922.109 C++ Spoofing Engine • 100% Offline</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="status-pill" id="kernelStatus">● Kernel 151 Ready</span>
+      <span class="status-pill" id="cloudStatusPill" style="background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); color: #60a5fa;">☁️ R2: Đang kết nối...</span>
+      <button class="btn" id="btnCloudConfig" onclick="openR2ConfigModal()" title="Cài đặt thông số kết nối Cloudflare R2">⚙️ Cấu hình R2</button>
+      <button class="btn" id="btnCloudSync" onclick="syncAllCloud()" title="Đồng bộ tất cả Profile từ Cloudflare R2">☁️ Đồng bộ Cloud (R2)</button>
+      <button class="btn" onclick="loadProfiles()">↻ Làm mới</button>
+      <button class="btn btn-auto" id="btnAutoCreate" onclick="autoCreateUniqueProfile()">⚡ TẠO PROFILE MỚI TỰ ĐỘNG (Auto Unique)</button>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ Tạo Profile Tùy Chỉnh</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Tổng số Profile</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Đang chạy (Active CDP)</div>
+        <div class="stat-value" id="statRunning" style="color: #34d399;">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm theo tên, ID, OS, GPU, ghi chú..." oninput="renderTable()" />
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Local API: <code class="mono">POST /api/v1/profile/open</code>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width: 220px; width: 24%;">Tên Profile</th>
+            <th>Hệ điều hành &amp; Phần cứng</th>
+            <th style="max-width: 160px; width: 14%;">WebGL Renderer (C++ Hook)</th>
+            <th>Vân tay Noise (Canvas / Audio / Rects)</th>
+            <th>Proxy &amp; Timezone</th>
+            <th>Trạng thái / CDP</th>
+            <th style="text-align: right;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="profileTableBody">
+          <tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--text-muted);">Đang tải danh sách Profile...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Create / Edit Profile Modal -->
+  <div class="modal-backdrop" id="profileModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Tạo Profile Antidetect Mới</h3>
+        <button class="btn btn-sm" onclick="closeProfileModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tên Profile</label>
+            <input type="text" id="fName" placeholder="VD: TK Ads US #01" />
+          </div>
+          <div class="form-group">
+            <label>Nhóm (Group)</label>
+            <input type="text" id="fGroup" value="Default" />
+          </div>
+
+          <div class="form-group full">
+            <label>Nguyên mẫu Phần cứng (Hardware Blueprint — Đồng bộ OS, Platform, GPU, Mainboard, Fonts, UA Metadata)</label>
+            <div style="display: flex; gap: 8px;">
+              <select id="fBlueprint" style="flex: 1;" onchange="onBlueprintChanged()"></select>
+              <button class="btn" type="button" id="btnRandomFp" onclick="regeneratePreviewFp(true)">🎲 Random Vân Tay Mới (Chống Trùng)</button>
+            </div>
+            <div id="hwCompatInfo" class="subtext" style="color: #60a5fa; margin-top: 4px;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>CPU Cores (HardwareConcurrency — Tương thích Blueprint)</label>
+            <select id="fCores" onchange="onCoresChanged()"></select>
+          </div>
+          <div class="form-group">
+            <label>RAM (DeviceMemory GB — Tương thích CPU/Mainboard)</label>
+            <select id="fMemory"></select>
+          </div>
+
+          <div class="form-group">
+            <label>Độ phân giải màn hình (ScreenSize — Tương thích GPU/OS)</label>
+            <select id="fScreen"></select>
+          </div>
+          <div class="form-group">
+            <label>Múi giờ (TimeZone)</label>
+            <select id="fTimezone">
+              <option value="America/New_York">America/New_York (UTC-5)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (UTC-8)</option>
+              <option value="Europe/London">Europe/London (UTC+0)</option>
+              <option value="Europe/Berlin">Europe/Berlin (UTC+1)</option>
+              <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+              <option value="Asia/Singapore">Asia/Singapore (UTC+8)</option>
+              <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (UTC+7)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>CanvasMark Seed (Bắt buộc &ge; 1000)</label>
+            <input type="number" id="fCanvasMark" min="1000" value="482910" />
+          </div>
+          <div class="form-group">
+            <label>WebGLMark / AudioFP / ClientRectFP</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+              <input type="number" id="fWebglMark" min="1" max="99" value="23" title="WebGLMark" />
+              <input type="number" id="fAudioFp" min="1" max="99" value="37" title="AudioFP" />
+              <input type="number" id="fRectFp" min="1" max="99" value="41" title="ClientRectFP" />
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Cấu hình Proxy (Để trống nếu dùng mạng trực tiếp, hoặc nhập <code class="mono">socks5://user:pass@ip:port</code> / <code class="mono">http://user:pass@ip:port</code>)</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="fProxy" style="flex: 1;" placeholder="Direct (Hoặc socks5://user:pass@host:port)" />
+              <button class="btn" type="button" onclick="testProxyInput()">⚡ Kiểm tra Proxy &amp; GeoIP</button>
+            </div>
+            <div id="proxyCheckResult" class="subtext"></div>
+          </div>
+
+          <div class="form-group">
+            <label>URL khởi động (Start URL)</label>
+            <input type="text" id="fStartUrl" value="about:blank" />
+          </div>
+          <div class="form-group">
+            <label>Tự động đồng bộ GeoIP khi mở</label>
+            <select id="fAutoGeo">
+              <option value="0">Tắt (Giữ nguyên Timezone/IP đã cấu hình)</option>
+              <option value="1">Bật (Tự động lấy IP, Timezone, Tọa độ theo Proxy)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeProfileModal()">Hủy</button>
+        <button class="btn btn-primary" onclick="saveProfile()">Lưu Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live CDP Fingerprint Probe Modal -->
+  <div class="modal-backdrop" id="probeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Bằng chứng Vân tay C++ Thực tế (Live CDP Probe)</h3>
+        <button class="btn btn-sm" onclick="document.getElementById('probeModal').classList.remove('active')">✕</button>
+      </div>
+      <div class="modal-body">
+        <pre class="probe-box" id="probeOutput">Đang truy vấn CDP Runtime.evaluate...</pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="document.getElementById('probeModal').classList.remove('active')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename Profile Modal -->
+  <div class="modal-backdrop" id="renameModal">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>Đổi Tên Profile</h3>
+        <button class="btn btn-sm" onclick="closeRenameModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <input type="hidden" id="renameProfileId" />
+        <div class="form-group full">
+          <label style="font-size: 13px; font-weight: 600; margin-bottom: 8px; display: block;">Tên Profile Mới</label>
+          <input type="text" id="renameInput" placeholder="Nhập tên profile..." style="width: 100%; padding: 10px 14px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 14px;" />
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn" onclick="closeRenameModal()">Hủy</button>
+        <button class="btn btn-primary" id="btnSaveRename" onclick="saveProfileName()">Lưu Thay Đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloudflare R2 Configuration Modal -->
+  <div class="modal-backdrop" id="r2ConfigModal">
+    <div class="modal" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3>⚙️ Cấu hình Cloudflare R2 / S3 Sync</h3>
+        <button class="btn btn-sm" onclick="closeR2ConfigModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+          Đồng bộ danh sách Profile và dữ liệu Session giữa nhiều máy tính qua Cloudflare R2 (hoặc S3-compatible).
+          Dữ liệu được nén tar.gz, loại trừ cache rác và khóa phân tán (Distributed Lock) tự động bảo vệ an toàn.
+        </p>
+
+        <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
+          <input type="checkbox" id="r2CfgEnabled" style="width: 18px; height: 18px; cursor: pointer;" checked />
+          <label for="r2CfgEnabled" style="cursor: pointer; font-size: 13px; color: var(--text-main); margin-bottom: 0;">Kích hoạt tính năng Đồng bộ Cloudflare R2</label>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>R2 Endpoint URL <span style="color: var(--accent);">*</span></label>
+            <input type="text" id="r2CfgEndpoint" placeholder="https://<account_id>.r2.cloudflarestorage.com" />
+            <div class="subtext">Lấy tại Cloudflare Dashboard &gt; R2 &gt; Overview &gt; Account Details &gt; S3 API</div>
+          </div>
+
+          <div class="form-group">
+            <label>Access Key ID <span style="color: var(--accent);">*</span></label>
+            <input type="text" id="r2CfgAccessKeyId" placeholder="VD: a1b2c3d4e5f6..." autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label>Secret Access Key <span style="color: var(--accent);">*</span></label>
+            <input type="password" id="r2CfgSecretAccessKey" placeholder="Nhập Secret Access Key..." autocomplete="new-password" />
+            <div id="r2SecretHint" class="subtext" style="color: #34d399; display: none;">✓ Đã lưu Secret Key trên máy này</div>
+          </div>
+
+          <div class="form-group">
+            <label>Bucket Name <span style="color: var(--accent);">*</span></label>
+            <input type="text" id="r2CfgBucket" value="vtn-antibrowser" placeholder="vtn-antibrowser" />
+          </div>
+
+          <div class="form-group">
+            <label>Region</label>
+            <input type="text" id="r2CfgRegion" value="auto" placeholder="auto" />
+          </div>
+        </div>
+
+        <div id="r2ConfigMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.4;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeR2ConfigModal()">Hủy</button>
+        <button class="btn btn-primary" type="button" id="btnSaveR2Config" onclick="saveR2Config()">Lưu &amp; Kiểm tra kết nối</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-banner" id="toastBanner"></div>
+
+  <script>
+    let allProfiles = [];
+    let blueprints = [];
+    let currentGeneratedFp = null;
+    let toastTimer = null;
+
+    const SCREEN_LABELS = {
+      '1920,1080': '1920 x 1080 (Full HD 16:9)',
+      '1920,1200': '1920 x 1200 (WUXGA 16:10)',
+      '2560,1080': '2560 x 1080 (UltraWide FHD 21:9)',
+      '2560,1440': '2560 x 1440 (2K QHD 16:9)',
+      '3440,1440': '3440 x 1440 (UltraWide QHD 21:9)',
+      '3840,2160': '3840 x 2160 (4K UHD 16:9)',
+      '1600,900': '1600 x 900 (HD+ 16:9)',
+      '1536,864': '1536 x 864 (Laptop Scaled 16:9)',
+      '1366,768': '1366 x 768 (Laptop WXGA 16:9)',
+      '1728,1117': '1728 x 1117 (MacBook Pro 16" Retina)',
+      '1512,982': '1512 x 982 (MacBook Pro 14" Retina)',
+      '1470,956': '1470 x 956 (MacBook Air M2/M3 Retina)',
+      '1440,900': '1440 x 900 (MacBook Air 13" Retina)',
+      '1680,1050': '1680 x 1050 (MacBook Scaled HiDPI)',
+      '1792,1120': '1792 x 1120 (Intel MacBook Pro 16")'
+    };
+
+    function showToast(msg) {
+      const el = document.getElementById('toastBanner');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('active');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('active'), 4500);
+    }
+
+    function getBlueprintById(id) {
+      return blueprints.find(b => b.id === id) || blueprints[0] || null;
+    }
+
+    function syncHardwareDropdownsForBlueprint(bp, selectedCores, selectedMem, selectedScreen) {
+      if (!bp) return;
+      const coresSel = document.getElementById('fCores');
+      const memSel = document.getElementById('fMemory');
+      const scrSel = document.getElementById('fScreen');
+
+      const coresList = bp.coresOptions || [8, 16];
+      coresSel.innerHTML = coresList.map(c => `<option value="${c}">${c} Cores</option>`).join('');
+      const targetCores = (selectedCores && coresList.includes(Number(selectedCores)))
+        ? String(selectedCores)
+        : String(coresList[0]);
+      coresSel.value = targetCores;
+
+      syncMemoryDropdownForCores(bp, Number(targetCores), selectedMem);
+
+      const scrList = bp.screens || ['1920,1080'];
+      scrSel.innerHTML = scrList.map(s => `<option value="${s}">${SCREEN_LABELS[s] || s.replace(',', ' x ')}</option>`).join('');
+      const targetScreen = (selectedScreen && scrList.includes(selectedScreen))
+        ? selectedScreen
+        : scrList[0];
+      scrSel.value = targetScreen;
+
+      updateHwCompatSummary(bp);
+    }
+
+    function syncMemoryDropdownForCores(bp, coresNum, selectedMem) {
+      if (!bp) return;
+      const memSel = document.getElementById('fMemory');
+      const minMem = (bp.minMemoryByCores && bp.minMemoryByCores[coresNum])
+        || (coresNum >= 24 ? 32 : coresNum >= 12 ? 16 : 8);
+      const allMem = bp.memoryOptions || [16, 32];
+      const validMem = allMem.filter(m => m >= minMem);
+      const finalMemList = validMem.length > 0 ? validMem : allMem;
+
+      memSel.innerHTML = finalMemList.map(m => `<option value="${m}">${m} GB RAM</option>`).join('');
+      const targetMem = (selectedMem && finalMemList.includes(Number(selectedMem)))
+        ? String(selectedMem)
+        : String(finalMemList[0]);
+      memSel.value = targetMem;
+    }
+
+    function updateHwCompatSummary(bp, comparedCount) {
+      const infoEl = document.getElementById('hwCompatInfo');
+      if (!infoEl || !bp) return;
+      const sw = (currentGeneratedFp && currentGeneratedFp.switches) || {};
+      const st = (currentGeneratedFp && currentGeneratedFp.staticConfig) || {};
+      const cmpText = comparedCount !== undefined
+        ? ` • Đã đối chiếu chống trùng với ${comparedCount} profile hiện có`
+        : '';
+      infoEl.textContent = `✓ Bo mạch: ${bp.manufacturer || ''} ${bp.productType || ''} | Kiến trúc: ${(bp.architecture || 'x86').toUpperCase()} 64-bit | Thiết bị: ${st.DeviceName || '-'} | MAC: ${st.MacAdderss || '-'}${cmpText}`;
+    }
+
+    async function onBlueprintChanged() {
+      await regeneratePreviewFp(false);
+    }
+
+    function onCoresChanged() {
+      const bp = getBlueprintById(document.getElementById('fBlueprint').value);
+      const cores = Number(document.getElementById('fCores').value);
+      const currentMem = Number(document.getElementById('fMemory').value);
+      syncMemoryDropdownForCores(bp, cores, currentMem);
+    }
+
+    async function init() {
+      const bpRes = await fetch('/api/v1/blueprints').then(r => r.json());
+      if (bpRes.ok) {
+        blueprints = bpRes.blueprints;
+        const sel = document.getElementById('fBlueprint');
+        sel.innerHTML = blueprints.map(b => `<option value="${b.id}">${b.label}</option>`).join('');
+      }
+      await loadProfiles();
+      await updateCloudStatus();
+      setInterval(loadProfiles, 4000);
+      setInterval(updateCloudStatus, 15000);
+    }
+
+    async function loadProfiles() {
+      try {
+        const res = await fetch('/api/v1/profiles').then(r => r.json());
+        if (res.ok) {
+          allProfiles = res.profiles;
+          document.getElementById('statTotal').textContent = allProfiles.length;
+          document.getElementById('statRunning').textContent = allProfiles.filter(p => p.running).length;
+          renderTable();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderTable() {
+      const q = (document.getElementById('searchInput').value || '').toLowerCase();
+      const tbody = document.getElementById('profileTableBody');
+      const filtered = allProfiles.filter(p => {
+        const hay = `${p.name} ${p.id} ${p.groupName} ${p.fingerprint?.os} ${p.fingerprint?.webglFp?.UNMASKED_RENDERER_WEBGL}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 36px; color: var(--text-muted);">Chưa có Profile nào. Nhấn <b>+ Tạo Profile Mới</b> để khởi tạo.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        const fp = p.fingerprint || {};
+        const sw = fp.switches || {};
+        const wgl = fp.webglFp || {};
+        const isMac = sw.Platform === 'MacIntel';
+        const proxyStr = p.proxyConfig && p.proxyConfig.host
+          ? `${p.proxyConfig.type}://${p.proxyConfig.host}:${p.proxyConfig.port}`
+          : 'Direct';
+
+        return `
+          <tr>
+            <td>
+              <div class="profile-name-row" style="display: flex; align-items: center; gap: 8px;">
+                <span id="name-display-${p.id}" style="font-weight: 700; font-size: 14px; word-break: break-word;">${escapeHtml(p.name)}</span>
+                <button class="btn-edit-name" onclick="openRenameModal('${p.id}', '${escapeJs(p.name)}')" title="Đổi tên Profile">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="subtext mono">${p.id} • ${escapeHtml(p.groupName)}</div>
+            </td>
+            <td>
+              <span class="badge ${isMac ? 'badge-mac' : 'badge-win'}">${sw.Platform || 'Win32'}</span>
+              <div class="subtext">${sw.HardwareConcurrency || 8} Cores • ${sw.DeviceMemory || 16}GB RAM • ${sw.ScreenSize || '1920,1080'}</div>
+            </td>
+            <td>
+              <div style="max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(wgl.UNMASKED_RENDERER_WEBGL || '')}">
+                ${escapeHtml(wgl.UNMASKED_RENDERER_WEBGL || 'Default')}
+              </div>
+              <div class="subtext">${escapeHtml(wgl.UNMASKED_VENDOR_WEBGL || '')}</div>
+            </td>
+            <td class="mono">
+              <div>Canvas: #${sw.CanvasMark || '0'}</div>
+              <div class="subtext">WGL:${sw.WebGLMark || '-'} | Aud:${sw.AudioFP || '-'} | Rect:${sw.ClientRectFP || '-'}</div>
+            </td>
+            <td>
+              <div class="mono">${escapeHtml(proxyStr)}</div>
+              <div class="subtext">${escapeHtml(sw.TimeZone || 'America/New_York')}</div>
+            </td>
+            <td>
+              ${p.running
+                ? `<span class="badge badge-running">● Đang chạy (Port ${p.activeSession?.debuggingPort})</span>
+                   <div class="subtext mono">PID: ${p.activeSession?.pid}</div>`
+                : `<span class="badge badge-stopped">○ Đã đóng</span>`
+              }
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              ${p.running
+                ? `<button class="btn btn-sm" onclick="probeProfile('${p.id}')">🔍 Kiểm tra Vân tay</button>
+                   <button class="btn btn-sm btn-danger" onclick="closeProfile('${p.id}')">■ Đóng</button>`
+                : `<button class="btn btn-sm btn-success" onclick="openProfile('${p.id}')">▶ Mở Trình Duyệt</button>
+                   <button class="btn btn-sm" onclick="uploadProfileToCloud('${p.id}')" title="Đẩy profile lên Cloudflare R2">☁️ Đẩy</button>
+                   <button class="btn btn-sm btn-danger" onclick="deleteProfile('${p.id}')">🗑</button>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function openCreateModal() {
+      document.getElementById('fName').value = `Profile #${allProfiles.length + 1}`;
+      document.getElementById('fProxy').value = '';
+      document.getElementById('proxyCheckResult').textContent = '';
+      await regeneratePreviewFp(true);
+      document.getElementById('profileModal').classList.add('active');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.remove('active');
+    }
+
+    async function regeneratePreviewFp(pickUnusedBlueprint = false) {
+      const blueprintId = pickUnusedBlueprint ? undefined : document.getElementById('fBlueprint').value;
+      const res = await fetch('/api/v1/fingerprint/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blueprintId, ensureUnique: true })
+      }).then(r => r.json());
+
+      if (res.ok) {
+        currentGeneratedFp = res.fingerprint;
+        const sw = currentGeneratedFp.switches;
+        if (currentGeneratedFp.blueprintId) {
+          document.getElementById('fBlueprint').value = currentGeneratedFp.blueprintId;
+        }
+        const bp = getBlueprintById(currentGeneratedFp.blueprintId || document.getElementById('fBlueprint').value);
+        syncHardwareDropdownsForBlueprint(bp, sw.HardwareConcurrency, sw.DeviceMemory, sw.ScreenSize);
+        document.getElementById('fCanvasMark').value = sw.CanvasMark;
+        document.getElementById('fWebglMark').value = sw.WebGLMark;
+        document.getElementById('fAudioFp').value = sw.AudioFP;
+        document.getElementById('fRectFp').value = sw.ClientRectFP;
+        updateHwCompatSummary(bp, res.comparedProfilesCount);
+      }
+    }
+
+    async function autoCreateUniqueProfile() {
+      const btn = document.getElementById('btnAutoCreate');
+      const oldText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang tạo Profile độc nhất...';
+      }
+      try {
+        const res = await fetch('/api/v1/profiles/auto-create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        }).then(r => r.json());
+
+        if (res.ok && res.profile) {
+          const p = res.profile;
+          const sw = (p.fingerprint && p.fingerprint.switches) || {};
+          await loadProfiles();
+          showToast(`✓ Đã tạo "${p.name}" (${sw.HardwareConcurrency}C/${sw.DeviceMemory}G/${sw.ScreenSize}) — Không trùng với ${res.comparedProfilesCount} profile trước đó!`);
+        } else {
+          alert('Lỗi tạo Profile tự động: ' + (res.error || 'Unknown'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi tạo Profile tự động: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = oldText;
+        }
+      }
+    }
+
+    async function testProxyInput() {
+      const raw = document.getElementById('fProxy').value.trim();
+      const box = document.getElementById('proxyCheckResult');
+      box.textContent = 'Đang kiểm tra kết nối và phân giải GeoIP...';
+      box.style.color = '#94a3b8';
+
+      const res = await fetch('/api/v1/proxy/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proxy: raw || 'direct' })
+      }).then(r => r.json());
+
+      if (res.ok && res.result && res.result.ok) {
+        const r = res.result;
+        box.style.color = '#34d399';
+        box.textContent = `✓ Kết nối thành công! IP: ${r.ip} | Quốc gia: ${r.country} (${r.countryCode}) | Timezone: ${r.timeZone}`;
+        document.getElementById('fTimezone').value = r.timeZone;
+      } else {
+        box.style.color = '#f87171';
+        box.textContent = `✕ Lỗi kết nối Proxy: ${(res.result && res.result.error) || res.error || 'Unknown'}`;
+      }
+    }
+
+    async function saveProfile() {
+      const blueprintId = document.getElementById('fBlueprint').value;
+      const st = currentGeneratedFp && currentGeneratedFp.staticConfig;
+      const overrides = {
+        blueprintId,
+        hardwareConcurrency: document.getElementById('fCores').value,
+        deviceMemory: document.getElementById('fMemory').value,
+        screenSize: document.getElementById('fScreen').value,
+        timeZone: document.getElementById('fTimezone').value,
+        canvasMark: document.getElementById('fCanvasMark').value,
+        webglMark: document.getElementById('fWebglMark').value,
+        audioFp: document.getElementById('fAudioFp').value,
+        clientRectFp: document.getElementById('fRectFp').value,
+        macAddress: st ? st.MacAdderss : undefined,
+        deviceName: st ? st.DeviceName : undefined,
+        newTabUrl: document.getElementById('fStartUrl').value.trim() || 'about:blank'
+      };
+
+      const rawProxy = document.getElementById('fProxy').value.trim();
+      const payload = {
+        name: document.getElementById('fName').value.trim() || 'New Profile',
+        groupName: document.getElementById('fGroup').value.trim() || 'Default',
+        startUrl: overrides.newTabUrl,
+        autoGeoIp: document.getElementById('fAutoGeo').value === '1',
+        proxyConfig: rawProxy ? rawProxy : { mode: 'direct' },
+        fingerprintOverrides: overrides
+      };
+
+      await fetch('/api/v1/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      closeProfileModal();
+      await loadProfiles();
+    }
+
+    async function openProfile(id) {
+      const res = await fetch('/api/v1/profile/open', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: id })
+      }).then(r => r.json());
+      if (!res.ok) alert('Lỗi mở Profile: ' + res.error);
+      await loadProfiles();
+    }
+
+    async function closeProfile(id) {
+      await fetch('/api/v1/profile/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: id })
+      });
+      await loadProfiles();
+    }
+
+    async function probeProfile(id) {
+      const modal = document.getElementById('probeModal');
+      const out = document.getElementById('probeOutput');
+      out.textContent = 'Đang kết nối WebSocket tới CDP của Profile ' + id + '...';
+      modal.classList.add('active');
+
+      const res = await fetch('/api/v1/profile/probe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: id })
+      }).then(r => r.json());
+
+      if (res.ok) {
+        out.textContent = JSON.stringify(res.report, null, 2);
+      } else {
+        out.textContent = 'Lỗi: ' + res.error;
+      }
+    }
+
+    async function deleteProfile(id) {
+      if (!confirm('Xóa vĩnh viễn Profile ' + id + ' và dữ liệu ổ cứng của nó?')) return;
+      await fetch('/api/v1/profiles/' + encodeURIComponent(id), { method: 'DELETE' });
+      await loadProfiles();
+    }
+
+    let r2HasSecret = false;
+
+    async function openR2ConfigModal() {
+      const modal = document.getElementById('r2ConfigModal');
+      const msgBox = document.getElementById('r2ConfigMsg');
+      if (msgBox) msgBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/v1/cloud/config').then(r => r.json());
+        if (res.ok && res.config) {
+          const cfg = res.config;
+          document.getElementById('r2CfgEnabled').checked = Boolean(cfg.enabled);
+          document.getElementById('r2CfgEndpoint').value = cfg.endpoint || '';
+          document.getElementById('r2CfgAccessKeyId').value = cfg.accessKeyId || '';
+          document.getElementById('r2CfgBucket').value = cfg.bucket || 'vtn-antibrowser';
+          document.getElementById('r2CfgRegion').value = cfg.region || 'auto';
+
+          r2HasSecret = Boolean(cfg.hasSecret);
+          const secretInput = document.getElementById('r2CfgSecretAccessKey');
+          const secretHint = document.getElementById('r2SecretHint');
+          secretInput.value = '';
+          if (r2HasSecret) {
+            secretInput.placeholder = '•••••••••••••••• (Giữ nguyên nếu không đổi)';
+            if (secretHint) secretHint.style.display = 'block';
+          } else {
+            secretInput.placeholder = 'Nhập Secret Access Key...';
+            if (secretHint) secretHint.style.display = 'none';
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load R2 config:', err);
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeR2ConfigModal() {
+      document.getElementById('r2ConfigModal').classList.remove('active');
+    }
+
+    async function saveR2Config() {
+      const btn = document.getElementById('btnSaveR2Config');
+      const msgBox = document.getElementById('r2ConfigMsg');
+      const enabled = document.getElementById('r2CfgEnabled').checked;
+      const endpoint = (document.getElementById('r2CfgEndpoint').value || '').trim();
+      const accessKeyId = (document.getElementById('r2CfgAccessKeyId').value || '').trim();
+      const secretAccessKey = (document.getElementById('r2CfgSecretAccessKey').value || '').trim();
+      const bucket = (document.getElementById('r2CfgBucket').value || '').trim() || 'vtn-antibrowser';
+      const region = (document.getElementById('r2CfgRegion').value || '').trim() || 'auto';
+
+      if (enabled) {
+        if (!endpoint) {
+          alert('Vui lòng nhập R2 Endpoint URL');
+          document.getElementById('r2CfgEndpoint').focus();
+          return;
+        }
+        if (!accessKeyId) {
+          alert('Vui lòng nhập Access Key ID');
+          document.getElementById('r2CfgAccessKeyId').focus();
+          return;
+        }
+        if (!secretAccessKey && !r2HasSecret) {
+          alert('Vui lòng nhập Secret Access Key');
+          document.getElementById('r2CfgSecretAccessKey').focus();
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Đang lưu & kiểm tra kết nối...';
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = 'rgba(59, 130, 246, 0.12)';
+        msgBox.style.border = '1px solid rgba(59, 130, 246, 0.35)';
+        msgBox.style.color = '#60a5fa';
+        msgBox.textContent = 'Đang lưu cấu hình và gửi gói tin AWS SigV4 kiểm tra kết nối tới Cloudflare R2...';
+      }
+
+      try {
+        const payload = {
+          enabled,
+          endpoint,
+          accessKeyId,
+          secretAccessKey: secretAccessKey || undefined,
+          bucket,
+          region
+        };
+
+        const res = await fetch('/api/v1/cloud/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        if (res.ok) {
+          await updateCloudStatus();
+          if (res.status && res.status.connected) {
+            closeR2ConfigModal();
+            showToast(`✓ Đã kết nối R2 thành công! Bucket: "${bucket}" (${res.status.profileCount || 0} profile trên cloud)`);
+          } else if (!enabled) {
+            closeR2ConfigModal();
+            showToast('✓ Đã lưu cấu hình (Đồng bộ Cloud R2 đang TẮT)');
+          } else {
+            const errMsg = (res.status && res.status.error) || (res.status && res.status.message) || 'Không thể kết nối';
+            if (msgBox) {
+              msgBox.style.background = 'rgba(239, 68, 68, 0.12)';
+              msgBox.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+              msgBox.style.color = '#f87171';
+              msgBox.textContent = '⚠️ Đã lưu cấu hình nhưng kiểm tra kết nối R2 thất bại: ' + errMsg;
+            }
+          }
+        } else {
+          alert('Lỗi lưu cấu hình: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Lỗi gửi yêu cầu: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Lưu & Kiểm tra kết nối';
+      }
+    }
+
+    async function updateCloudStatus() {
+      try {
+        const res = await fetch('/api/v1/cloud/status').then(r => r.json());
+        const pill = document.getElementById('cloudStatusPill');
+        if (!pill) return;
+        if (res.ok && res.status && res.status.connected) {
+          pill.style.background = 'rgba(16, 185, 129, 0.12)';
+          pill.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+          pill.style.color = '#34d399';
+          pill.textContent = `☁️ Connected: ${res.status.bucket} (${res.status.profileCount} Cloud Profiles)`;
+        } else if (res.ok && res.status && res.status.enabled) {
+          pill.style.background = 'rgba(239, 68, 68, 0.12)';
+          pill.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+          pill.style.color = '#f87171';
+          pill.textContent = `☁️ R2 Error: ${res.status.error || 'Disconnected'}`;
+        } else {
+          pill.style.background = 'rgba(148, 163, 184, 0.12)';
+          pill.style.borderColor = 'rgba(148, 163, 184, 0.35)';
+          pill.style.color = '#94a3b8';
+          pill.textContent = '☁️ R2: Disabled';
+        }
+      } catch (err) {
+        console.error('Failed to fetch cloud status:', err);
+      }
+    }
+
+    async function syncAllCloud() {
+      const btn = document.getElementById('btnCloudSync');
+      const oldText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '☁️ Đang đồng bộ...';
+      }
+      try {
+        const res = await fetch('/api/v1/cloud/sync-all', { method: 'POST' }).then(r => r.json());
+        if (res.ok && res.result) {
+          await loadProfiles();
+          await updateCloudStatus();
+          showToast(`✓ Đã đồng bộ Cloudflare R2! Tổng ${res.result.totalCloudProfiles} profile trên cloud, tải mới ${res.result.newSyncedProfiles} profile.`);
+        } else {
+          alert('Lỗi đồng bộ Cloud: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi đồng bộ: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = oldText;
+        }
+      }
+    }
+
+    async function uploadProfileToCloud(id) {
+      showToast(`☁️ Đang nén và tải Profile ${id} lên Cloudflare R2...`);
+      try {
+        const res = await fetch('/api/v1/cloud/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: id })
+        }).then(r => r.json());
+        if (res.ok) {
+          await updateCloudStatus();
+          showToast(`✓ Đã upload Profile ${id} lên Cloudflare R2 thành công!`);
+        } else {
+          alert('Lỗi upload profile: ' + (res.error || 'Unknown'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối upload: ' + err.message);
+      }
+    }
+
+    async function downloadProfileFromCloud(id) {
+      showToast(`☁️ Đang tải Profile ${id} từ Cloudflare R2 về máy...`);
+      try {
+        const res = await fetch('/api/v1/cloud/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: id })
+        }).then(r => r.json());
+        if (res.ok) {
+          await loadProfiles();
+          showToast(`✓ Đã tải và đồng bộ Profile ${id} thành công!`);
+        } else {
+          alert('Lỗi download profile: ' + (res.error || 'Unknown'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối download: ' + err.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function escapeJs(str) {
+      return String(str || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, ' ');
+    }
+
+    function openRenameModal(id, currentName) {
+      document.getElementById('renameProfileId').value = id;
+      const input = document.getElementById('renameInput');
+      input.value = currentName || '';
+      document.getElementById('renameModal').classList.add('active');
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 50);
+    }
+
+    function closeRenameModal() {
+      document.getElementById('renameModal').classList.remove('active');
+    }
+
+    async function saveProfileName() {
+      const id = document.getElementById('renameProfileId').value;
+      const input = document.getElementById('renameInput');
+      const newName = (input.value || '').trim();
+      if (!newName) {
+        alert('Vui lòng nhập tên Profile');
+        input.focus();
+        return;
+      }
+      const btn = document.getElementById('btnSaveRename');
+      btn.disabled = true;
+      btn.textContent = 'Đang lưu...';
+      try {
+        const res = await fetch(`/api/v1/profiles/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName })
+        }).then(r => r.json());
+
+        if (res.ok) {
+          closeRenameModal();
+          showToast(`✓ Đã đổi tên Profile thành "${newName}"`);
+          await loadProfiles();
+        } else {
+          alert('Lỗi cập nhật tên: ' + (res.error || 'Không xác định'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Lưu Thay Đổi';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const renameInput = document.getElementById('renameInput');
+      if (renameInput) {
+        renameInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            saveProfileName();
+          } else if (e.key === 'Escape') {
+            closeRenameModal();
+          }
+        });
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
