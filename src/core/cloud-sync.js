@@ -125,6 +125,17 @@ class CloudSync {
       region: (newCfg.region !== undefined ? String(newCfg.region) : (existingCfg.region || 'auto')).trim() || 'auto'
     };
 
+    if (merged.endpoint) {
+      try {
+        const parsedEndpoint = new URL(merged.endpoint);
+        if (parsedEndpoint.protocol !== 'http:' && parsedEndpoint.protocol !== 'https:') {
+          throw new Error('Giao thức endpoint không hợp lệ (chỉ hỗ trợ http: hoặc https:).');
+        }
+      } catch (err) {
+        throw new Error(`Endpoint URL không hợp lệ: ${err.message}`);
+      }
+    }
+
     if (merged.enabled) {
       if (!merged.endpoint) {
         throw new Error('Endpoint URL không được để trống khi bật đồng bộ R2.');
@@ -147,6 +158,214 @@ class CloudSync {
       ok: true,
       config: this.getMaskedConfig()
     };
+  }
+
+  /**
+   * Exports R2 connection credentials as a single portable 1-Line Sync Key string.
+   * Format: "VTN-R2-" + Base64(JSON({ endpoint, accessKeyId, secretAccessKey, bucket, region }))
+   *
+   * @returns {string|null}
+   */
+  exportSyncKey() {
+    let cfg = null;
+    if (fs.existsSync(this.configPath)) {
+      try {
+        cfg = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+      } catch {}
+    }
+    if (!cfg && this.r2Client && this.r2Client.isConfigured()) {
+      cfg = {
+        endpoint: this.r2Client.endpoint,
+        accessKeyId: this.r2Client.accessKeyId,
+        secretAccessKey: this.r2Client.secretAccessKey,
+        bucket: this.r2Client.bucket,
+        region: this.r2Client.region
+      };
+    }
+
+    if (!cfg || !cfg.endpoint || !cfg.accessKeyId || !cfg.secretAccessKey) {
+      return null;
+    }
+
+    const payload = {
+      endpoint: String(cfg.endpoint).trim().replace(/\/+$/, ''),
+      accessKeyId: String(cfg.accessKeyId).trim(),
+      secretAccessKey: String(cfg.secretAccessKey).trim(),
+      bucket: (cfg.bucket || 'vtn-antibrowser').trim(),
+      region: (cfg.region || 'auto').trim()
+    };
+
+    const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
+    return `VTN-R2-${b64}`;
+  }
+
+  /**
+   * Imports and validates a 1-Line Sync Key string, saves configuration, and reloads R2Client.
+   *
+   * @param {string} syncKey
+   * @returns {{ ok: boolean, config: Object }}
+   */
+  importSyncKey(syncKey) {
+    if (!syncKey || typeof syncKey !== 'string') {
+      throw new Error('Sync Key không được để trống.');
+    }
+
+    const trimmed = syncKey.trim();
+    if (!trimmed.startsWith('VTN-R2-')) {
+      throw new Error('Định dạng Sync Key không hợp lệ. Khóa phải bắt đầu bằng "VTN-R2-".');
+    }
+
+    const b64Part = trimmed.slice('VTN-R2-'.length).trim();
+    if (!b64Part) {
+      throw new Error('Nội dung mã hóa của Sync Key bị trống.');
+    }
+
+    let parsed;
+    try {
+      const jsonStr = Buffer.from(b64Part, 'base64').toString('utf8');
+      parsed = JSON.parse(jsonStr);
+    } catch (e) {
+      throw new Error(`Không thể giải mã Sync Key: ${e.message}`);
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Dữ liệu Sync Key không hợp lệ.');
+    }
+
+    if (!parsed.endpoint || !parsed.accessKeyId || !parsed.secretAccessKey) {
+      throw new Error('Sync Key thiếu các thông tin xác thực bắt buộc (endpoint, accessKeyId, secretAccessKey).');
+    }
+
+    return this.saveConfig({
+      enabled: true,
+      endpoint: parsed.endpoint,
+      accessKeyId: parsed.accessKeyId,
+      secretAccessKey: parsed.secretAccessKey,
+      bucket: parsed.bucket || 'vtn-antibrowser',
+      region: parsed.region || 'auto'
+    });
+  }
+
+  /**
+   * Checks whether the native Chromium kernel archive exists on Cloudflare R2.
+   * Key: "system/bin_151-0007.tar.gz"
+   *
+   * @returns {Promise<{ ok: boolean, exists: boolean, contentLength?: number, lastModified?: string, reason?: string, error?: string }>}
+   */
+  async hasKernelOnCloud() {
+    if (!this.isEnabled()) {
+      return { ok: true, exists: false, reason: 'R2 is not configured or disabled' };
+    }
+
+    try {
+      const head = await this.r2Client.headObject('system/bin_151-0007.tar.gz');
+      if (head && head.ok) {
+        return {
+          ok: true,
+          exists: true,
+          contentLength: head.contentLength || 0,
+          lastModified: head.lastModified || null
+        };
+      }
+      return { ok: true, exists: false };
+    } catch (err) {
+      return { ok: false, exists: false, error: err.message };
+    }
+  }
+
+  /**
+   * Compresses bin/151-0007 into tar.gz and uploads to R2 at system/bin_151-0007.tar.gz.
+   *
+   * @param {string} [binBaseDir]
+   * @returns {Promise<{ ok: boolean, key: string, size: number, uploadedAt: string }>}
+   */
+  async uploadKernel(binBaseDir) {
+    if (!this.isEnabled()) {
+      throw new Error('Cloudflare R2 is disabled or not configured in data/r2_config.json');
+    }
+
+    const base = binBaseDir ? path.resolve(binBaseDir) : path.resolve(__dirname, '..', '..', 'bin');
+    const kernelDir = path.resolve(base, '151-0007');
+
+    if (!fs.existsSync(kernelDir)) {
+      throw new Error(`Thư mục lõi Chromium không tồn tại tại: ${kernelDir}`);
+    }
+
+    const tempTar = path.join(os.tmpdir(), `vtn_kernel_151-0007_${Date.now()}_${crypto.randomBytes(3).toString('hex')}.tar.gz`);
+
+    try {
+      // Compress directory "151-0007" relative to "base"
+      const tarResult = spawnSync('tar.exe', ['-czf', tempTar, '-C', base, '151-0007'], { stdio: 'pipe' });
+      if (tarResult.status !== 0 || !fs.existsSync(tempTar)) {
+        const errMsg = tarResult.error ? tarResult.error.message : (tarResult.stderr ? tarResult.stderr.toString('utf8') : 'Unknown tar error');
+        throw new Error(`Nén lõi Chromium thất bại: ${errMsg}`);
+      }
+
+      const tarBuf = fs.readFileSync(tempTar);
+      await this.r2Client.putObject(
+        'system/bin_151-0007.tar.gz',
+        tarBuf,
+        'application/gzip'
+      );
+
+      return {
+        ok: true,
+        key: 'system/bin_151-0007.tar.gz',
+        size: tarBuf.length,
+        uploadedAt: new Date().toISOString()
+      };
+    } finally {
+      if (fs.existsSync(tempTar)) {
+        try { fs.unlinkSync(tempTar); } catch {}
+      }
+    }
+  }
+
+  /**
+   * Downloads system/bin_151-0007.tar.gz from R2 and extracts to binBaseDir/151-0007.
+   *
+   * @param {string} [binBaseDir]
+   * @returns {Promise<{ ok: boolean, extracted: boolean, binPath: string, chromeExe: string }>}
+   */
+  async downloadKernel(binBaseDir) {
+    if (!this.isEnabled()) {
+      throw new Error('Cloudflare R2 is disabled or not configured in data/r2_config.json');
+    }
+
+    const base = binBaseDir ? path.resolve(binBaseDir) : path.resolve(__dirname, '..', '..', 'bin');
+    fs.mkdirSync(base, { recursive: true });
+
+    const obj = await this.r2Client.getObject('system/bin_151-0007.tar.gz');
+    if (!obj || !obj.body || obj.body.length === 0) {
+      throw new Error('Không tìm thấy file lõi system/bin_151-0007.tar.gz trên Cloudflare R2.');
+    }
+
+    const tempTar = path.join(os.tmpdir(), `vtn_extract_kernel_${Date.now()}_${crypto.randomBytes(3).toString('hex')}.tar.gz`);
+
+    try {
+      fs.writeFileSync(tempTar, obj.body);
+      const tarResult = spawnSync('tar.exe', ['-xzf', tempTar, '-C', base], { stdio: 'pipe' });
+      if (tarResult.status !== 0) {
+        const errMsg = tarResult.error ? tarResult.error.message : (tarResult.stderr ? tarResult.stderr.toString('utf8') : 'Unknown tar error');
+        throw new Error(`Giải nén lõi Chromium thất bại: ${errMsg}`);
+      }
+
+      const chromeExe = path.join(base, '151-0007', 'chrome.exe');
+      if (!fs.existsSync(chromeExe)) {
+        throw new Error(`Sau khi giải nén, không tìm thấy chrome.exe tại: ${chromeExe}`);
+      }
+
+      return {
+        ok: true,
+        extracted: true,
+        binPath: path.join(base, '151-0007'),
+        chromeExe
+      };
+    } finally {
+      if (fs.existsSync(tempTar)) {
+        try { fs.unlinkSync(tempTar); } catch {}
+      }
+    }
   }
 
   isEnabled() {

@@ -42,18 +42,107 @@ async function checkExistingVntBrowser(host, port, timeoutMs = 2000) {
 
 /**
  * Launches the VNT-Browser Manager Dashboard inside a standalone `--app` desktop window.
- * Configures launch artifacts with a dedicated UI profile, free CDP port, and performs
- * an active CDP Page.navigate to ensure the dashboard renders immediately without getting
- * intercepted or replaced with `about:blank`.
+ * Ensures Chromium 151 kernel is present before launching UI window.
+ * If missing, attempts auto-bootstrap from Cloudflare R2.
+ * If still unavailable, falls back gracefully to opening system default browser without crashing.
  *
  * @param {string} dashboardUrl
- * @param {string} [chromeExe]
+ * @param {BrowserManager} browserManager
  * @param {Object} [launchOpts={}]
  * @returns {Promise<Object>}
  */
+async function launchAppWindowWithFallback(dashboardUrl, browserManager, launchOpts = {}) {
+  const parsedUrl = new URL(dashboardUrl);
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error(`Invalid protocol for dashboardUrl: "${parsedUrl.protocol}". Only "http:" and "https:" are allowed.`);
+  }
+
+  let chromeExe = browserManager.chromeExe;
+
+  // 1. Check if kernel is already present on local disk
+  if (!fs.existsSync(chromeExe)) {
+    console.log('[VTN Anti-Browser] Chromium 151 kernel not found locally at:', chromeExe);
+
+    // 2. Try auto-bootstrap from Cloudflare R2 if configured
+    if (browserManager.cloudSync && browserManager.cloudSync.isEnabled()) {
+      try {
+        console.log('[VTN Anti-Browser] Checking Cloudflare R2 for Chromium 151 kernel package...');
+        const cloudStatus = await browserManager.cloudSync.hasKernelOnCloud();
+        if (cloudStatus && cloudStatus.exists) {
+          console.log('[VTN Anti-Browser] Found kernel package on R2. Downloading & unpacking system/bin_151-0007.tar.gz...');
+          const binBaseDir = path.resolve(__dirname, '..', 'bin');
+          const dlRes = await browserManager.cloudSync.downloadKernel(binBaseDir);
+          if (dlRes && dlRes.chromeExe && fs.existsSync(dlRes.chromeExe)) {
+            chromeExe = dlRes.chromeExe;
+            browserManager.chromeExe = dlRes.chromeExe;
+            console.log('[VTN Anti-Browser] ✓ Chromium 151 kernel downloaded and unpacked successfully.');
+          }
+        } else {
+          console.log('[VTN Anti-Browser] Kernel package system/bin_151-0007.tar.gz not found on Cloudflare R2.');
+        }
+      } catch (dlErr) {
+        console.warn('[VTN Anti-Browser] Auto-bootstrap from R2 failed:', dlErr.message);
+      }
+    }
+  }
+
+  // 3. If kernel exists now, open native --app window
+  if (fs.existsSync(chromeExe)) {
+    return openManagerAppWindow(parsedUrl.href, chromeExe, launchOpts);
+  }
+
+  // 4. Smart Fallback: Open dashboard in default Windows browser (rundll32 url.dll,FileProtocolHandler)
+  console.log('[VTN Anti-Browser] ------------------------------------------------------------');
+  console.log('[VTN Anti-Browser] [SMART FALLBACK] Chromium native kernel not found locally or on R2.');
+  console.log(`[VTN Anti-Browser] Opening Dashboard in default Windows system browser: ${parsedUrl.href}`);
+  console.log('[VTN Anti-Browser] Tip: Open Settings > Cloudflare R2 to enter your Sync Key or download the kernel.');
+  console.log('[VTN Anti-Browser] ------------------------------------------------------------');
+
+  try {
+    const fallbackProc = spawn('rundll32.exe', ['url.dll,FileProtocolHandler', parsedUrl.href], {
+      stdio: 'ignore',
+      detached: true
+    });
+    fallbackProc.unref();
+  } catch (spawnErr) {
+    console.error('[VTN Anti-Browser] Failed to launch default system browser:', spawnErr.message);
+  }
+
+  return {
+    process: null,
+    fallback: true,
+    dashboardUrl: parsedUrl.href,
+    cdpPort: null,
+    pageWsEndpoint: null,
+    browserWsEndpoint: null
+  };
+}
 async function openManagerAppWindow(dashboardUrl, chromeExe, launchOpts = {}) {
+  const parsedUrl = new URL(dashboardUrl);
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error(`Invalid protocol for dashboardUrl: "${parsedUrl.protocol}". Only "http:" and "https:" are allowed.`);
+  }
+
   const exe = chromeExe || path.resolve(__dirname, '..', 'bin', '151-0007', 'chrome.exe');
   if (!fs.existsSync(exe)) {
+    if (launchOpts.fallbackToSystemBrowser) {
+      console.log(`[VTN Anti-Browser] Native kernel not found. Opening default system browser at: ${parsedUrl.href}`);
+      try {
+        const fallbackProc = spawn('rundll32.exe', ['url.dll,FileProtocolHandler', parsedUrl.href], {
+          stdio: 'ignore',
+          detached: true
+        });
+        fallbackProc.unref();
+      } catch {}
+      return {
+        process: null,
+        fallback: true,
+        dashboardUrl: parsedUrl.href,
+        cdpPort: null,
+        pageWsEndpoint: null,
+        browserWsEndpoint: null
+      };
+    }
     throw new Error(`Chromium executable not found at: ${exe}`);
   }
 
@@ -248,9 +337,9 @@ async function startVntBrowser(options = {}) {
         let appWindow = null;
         if (options.openAppWindow || process.argv.includes('--app-window')) {
           console.log('[VTN Anti-Browser] Opening App Window for existing instance...');
-          appWindow = await openManagerAppWindow(
+          appWindow = await launchAppWindowWithFallback(
             `http://${HOST}:${port}`,
-            browserManager.chromeExe,
+            browserManager,
             {
               headless: Boolean(options.headlessAppWindow),
               attached: Boolean(options.attachedAppWindow)
@@ -283,9 +372,9 @@ async function startVntBrowser(options = {}) {
   let appWindow = null;
   if (options.openAppWindow || process.argv.includes('--app-window')) {
     try {
-      appWindow = await openManagerAppWindow(
+      appWindow = await launchAppWindowWithFallback(
         dashboardUrl,
-        browserManager.chromeExe,
+        browserManager,
         {
           headless: Boolean(options.headlessAppWindow),
           attached: Boolean(options.attachedAppWindow)
@@ -348,5 +437,6 @@ if (require.main === module) {
 module.exports = {
   startVntBrowser,
   openManagerAppWindow,
+  launchAppWindowWithFallback,
   checkExistingVntBrowser
 };

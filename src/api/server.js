@@ -340,6 +340,95 @@ function createApiServer({ db, browserManager, uiDir }) {
         return sendJson(res, 200, { ok: true, result });
       }
 
+      // 7. 1-Line Sync Key & Chromium Kernel Cloud Sync
+      if (req.method === 'GET' && pathname === '/api/v1/cloud/sync-key') {
+        const origin = req.headers['origin'];
+        if (origin) {
+          const isAllowedOrigin = origin.startsWith('http://127.0.0.1') || origin.startsWith('http://localhost');
+          if (!isAllowedOrigin) {
+            return sendJson(res, 403, { ok: false, error: 'Forbidden: Origin not allowed to access sync key' });
+          }
+        }
+        if (!browserManager.cloudSync) {
+          return sendJson(res, 200, { ok: false, error: 'CloudSync service is unavailable' });
+        }
+        const syncKey = browserManager.cloudSync.exportSyncKey();
+        return sendJson(res, 200, {
+          ok: Boolean(syncKey),
+          syncKey: syncKey || null,
+          message: syncKey ? 'Exported Sync Key' : 'R2 configuration is incomplete or missing'
+        });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/cloud/import-key') {
+        if (!browserManager.cloudSync) {
+          return sendJson(res, 500, { ok: false, error: 'CloudSync service is unavailable' });
+        }
+        const body = await readJsonBody(req);
+        const syncKey = body.syncKey || body.key;
+        if (!syncKey) {
+          return sendJson(res, 400, { ok: false, error: 'Missing syncKey parameter' });
+        }
+        try {
+          const importRes = browserManager.cloudSync.importSyncKey(syncKey);
+          const status = await browserManager.cloudSync.getCloudStatus();
+          return sendJson(res, 200, {
+            ok: true,
+            saved: importRes.config,
+            status
+          });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'GET' && pathname === '/api/v1/cloud/kernel/status') {
+        if (!browserManager.cloudSync || !browserManager.cloudSync.isEnabled()) {
+          const localKernelPath = path.resolve(__dirname, '..', '..', 'bin', '151-0007', 'chrome.exe');
+          return sendJson(res, 200, {
+            ok: true,
+            exists: false,
+            hasLocalKernel: fs.existsSync(localKernelPath),
+            message: 'Cloudflare R2 is disabled or not configured'
+          });
+        }
+        const kernelInfo = await browserManager.cloudSync.hasKernelOnCloud();
+        const localKernelPath = path.resolve(__dirname, '..', '..', 'bin', '151-0007', 'chrome.exe');
+        return sendJson(res, 200, {
+          ok: true,
+          ...kernelInfo,
+          hasLocalKernel: fs.existsSync(localKernelPath)
+        });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/cloud/kernel/upload') {
+        if (!browserManager.cloudSync || !browserManager.cloudSync.isEnabled()) {
+          return sendJson(res, 400, { ok: false, error: 'Cloudflare R2 is disabled or not configured' });
+        }
+        await readJsonBody(req);
+        const binBaseDir = path.resolve(__dirname, '..', '..', 'bin');
+        try {
+          const result = await browserManager.cloudSync.uploadKernel(binBaseDir);
+          return sendJson(res, 200, { ok: true, result });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/cloud/kernel/download') {
+        if (!browserManager.cloudSync || !browserManager.cloudSync.isEnabled()) {
+          return sendJson(res, 400, { ok: false, error: 'Cloudflare R2 is disabled or not configured' });
+        }
+        await readJsonBody(req);
+        const binBaseDir = path.resolve(__dirname, '..', '..', 'bin');
+        try {
+          const result = await browserManager.cloudSync.downloadKernel(binBaseDir);
+          return sendJson(res, 200, { ok: true, result });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
       return sendJson(res, 404, { ok: false, error: `Route not found: ${req.method} ${pathname}` });
     } catch (err) {
       if (!res.headersSent) {

@@ -24,7 +24,7 @@ const {
   listValidHardwareCombinations
 } = require('../src/core/fingerprint-gen');
 const { fetchCdpJson } = require('../src/core/browser-manager');
-const { startVntBrowser, openManagerAppWindow } = require('../src/main');
+const { startVntBrowser, openManagerAppWindow, launchAppWindowWithFallback } = require('../src/main');
 const { R2Client } = require('../src/core/r2-client');
 const { CloudSync } = require('../src/core/cloud-sync');
 
@@ -507,7 +507,96 @@ async function runTests() {
     assert.strictEqual(postCfgRes.saved.secretAccessKey, undefined);
     assert.strictEqual(postCfgRes.saved.hasSecret, true);
     assert(postCfgRes.status, 'Connection status must be returned');
+
+    // Security Hardening: Endpoint protocol validation
+    assert.throws(
+      () => isolatedSync.saveConfig({ endpoint: 'ftp://r2.invalid.com' }),
+      /Endpoint URL không hợp lệ/
+    );
     console.log('  [PASS] R2 Masked Config, Secret Retention & REST API endpoints verified.');
+
+    // 6.5 Testing 1-Line Sync Key (exportSyncKey, importSyncKey) & Kernel Cloud Sync
+    console.log('=== [6.5] Testing 1-Line Sync Key & Kernel Sync Invariants ===');
+
+    // 6.5.1 exportSyncKey & importSyncKey unit assertions
+    const emptySync = new CloudSync({ configPath: path.join(testProfilesDir, 'non_existent_r2.json') });
+    assert.strictEqual(emptySync.exportSyncKey(), null, 'exportSyncKey must return null when credentials missing');
+
+    const generatedKey = isolatedSync.exportSyncKey();
+    assert(generatedKey && generatedKey.startsWith('VTN-R2-'), 'exportSyncKey must produce string starting with "VTN-R2-"');
+
+    // Verify import validation guards
+    assert.throws(() => emptySync.importSyncKey(''), /không được để trống/);
+    assert.throws(() => emptySync.importSyncKey('INVALID-KEY-123'), /bắt đầu bằng "VTN-R2-"/);
+    assert.throws(() => emptySync.importSyncKey('VTN-R2-!@#$not_base64!@#$'), /giải mã/);
+
+    const badPayloadKey = 'VTN-R2-' + Buffer.from(JSON.stringify({ endpoint: 'https://test' })).toString('base64');
+    assert.throws(() => emptySync.importSyncKey(badPayloadKey), /thiếu các thông tin xác thực/);
+
+    // Import valid key into new CloudSync instance
+    const importedRes = emptySync.importSyncKey(generatedKey);
+    assert.strictEqual(importedRes.ok, true);
+    assert.strictEqual(emptySync.r2Client.endpoint, 'https://updated-account.r2.cloudflarestorage.com');
+    assert.strictEqual(emptySync.r2Client.accessKeyId, 'test_ak_key_2');
+    assert.strictEqual(emptySync.r2Client.secretAccessKey, 'super_secret_token_123');
+    assert.strictEqual(emptySync.r2Client.bucket, 'updated-bucket');
+    console.log('  [PASS] 1-Line Sync Key export, input validation & import roundtrip verified.');
+
+    // 6.5.2 REST API GET /api/v1/cloud/sync-key & POST /api/v1/cloud/import-key
+    const apiSyncKeyRes = await fetch(`${app.url}/api/v1/cloud/sync-key`).then(r => r.json());
+    assert.strictEqual(apiSyncKeyRes.ok, true);
+    assert(apiSyncKeyRes.syncKey && apiSyncKeyRes.syncKey.startsWith('VTN-R2-'), 'API must return valid syncKey');
+
+    // Security Hardening: Anti-Theft Origin check for /api/v1/cloud/sync-key
+    const forbiddenOriginRes = await fetch(`${app.url}/api/v1/cloud/sync-key`, {
+      headers: { Origin: 'http://malicious-website.com' }
+    });
+    assert.strictEqual(forbiddenOriginRes.status, 403, 'Cross-origin request from untrusted origin must return 403 Forbidden');
+
+    const allowedLocalOriginRes = await fetch(`${app.url}/api/v1/cloud/sync-key`, {
+      headers: { Origin: 'http://127.0.0.1:8080' }
+    });
+    assert.strictEqual(allowedLocalOriginRes.status, 200, 'Localhost 127.0.0.1 origin must be allowed');
+
+    const allowedLocalhostOriginRes = await fetch(`${app.url}/api/v1/cloud/sync-key`, {
+      headers: { Origin: 'http://localhost:3000' }
+    });
+    assert.strictEqual(allowedLocalhostOriginRes.status, 200, 'Localhost origin must be allowed');
+
+    // Import the exported key into app via REST API
+    const apiImportRes = await postJson(app.url, '/api/v1/cloud/import-key', {
+      syncKey: apiSyncKeyRes.syncKey
+    });
+    assert.strictEqual(apiImportRes.ok, true);
+    assert.strictEqual(apiImportRes.saved.hasSecret, true);
+    assert(apiImportRes.status && apiImportRes.status.connected, 'Status must report connected after key import');
+
+    // Test API validation on bad keys
+    const badApiImport = await postJson(app.url, '/api/v1/cloud/import-key', { syncKey: 'VTN-R2-invalid' });
+    assert.strictEqual(badApiImport.ok, false);
+    console.log('  [PASS] REST API endpoints (/cloud/sync-key & /cloud/import-key) verified.');
+
+    // 6.5.3 Kernel Cloud Sync (hasKernelOnCloud, /cloud/kernel/status)
+    const kernelStatus = await app.browserManager.cloudSync.hasKernelOnCloud();
+    assert.strictEqual(kernelStatus.ok, true);
+    assert(typeof kernelStatus.exists === 'boolean');
+
+    const kernelApiRes = await fetch(`${app.url}/api/v1/cloud/kernel/status`).then(r => r.json());
+    assert.strictEqual(kernelApiRes.ok, true);
+    assert.strictEqual(typeof kernelApiRes.exists, 'boolean');
+    assert.strictEqual(typeof kernelApiRes.hasLocalKernel, 'boolean');
+    console.log('  [PASS] Kernel Cloud Status check & REST API (/cloud/kernel/status) verified.');
+
+    // Security Hardening: launchAppWindowWithFallback URL protocol validation
+    await assert.rejects(
+      () => launchAppWindowWithFallback('file:///C:/Windows/System32/cmd.exe', app.browserManager),
+      /Invalid protocol/
+    );
+    await assert.rejects(
+      () => launchAppWindowWithFallback('javascript:alert(1)', app.browserManager),
+      /Invalid protocol/
+    );
+    console.log('  [PASS] launchAppWindowWithFallback URL protocol validation & security hardening verified.');
 
     console.log('\n=== ALL E2E VERIFICATION ASSERTIONS PASSED (100% NATIVE C++ SPOOFING & UI APP WINDOW) ===');
   } finally {

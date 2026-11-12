@@ -617,6 +617,21 @@
           Dữ liệu được nén tar.gz, loại trừ cache rác và khóa phân tán (Distributed Lock) tự động bảo vệ an toàn.
         </p>
 
+        <!-- 1-Line Sync Key Quick Setup -->
+        <div style="background: rgba(255, 107, 0, 0.08); border: 1px solid var(--accent-border); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+          <div style="font-size: 13px; font-weight: 700; color: #ff8a00; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span>⚡ Dán nhanh 1-Line Sync Key (Máy mới)</span>
+            <button class="btn btn-sm" type="button" id="btnCopySyncKey" onclick="copySyncKeyToClipboard()" style="background: rgba(255,255,255,0.08); font-size: 11px; padding: 4px 8px;">📋 Copy Sync Key</button>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">
+            Máy mới chỉ cần dán chuỗi <code>VTN-R2-...</code> copy từ máy cũ vào đây để thiết lập tức thì toàn bộ credentials.
+          </p>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="r2SyncKeyInput" placeholder="Dán mã VTN-R2-... tại đây để cấu hình ngay" style="flex: 1; font-family: monospace; font-size: 12px; padding: 8px 12px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main);" />
+            <button class="btn btn-primary" type="button" id="btnImportSyncKey" onclick="importSyncKeyFromUi()" style="white-space: nowrap; padding: 8px 14px; font-size: 12px;">📥 Nhập Key</button>
+          </div>
+        </div>
+
         <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border);">
           <input type="checkbox" id="r2CfgEnabled" style="width: 18px; height: 18px; cursor: pointer;" checked />
           <label for="r2CfgEnabled" style="cursor: pointer; font-size: 13px; color: var(--text-main); margin-bottom: 0;">Kích hoạt tính năng Đồng bộ Cloudflare R2</label>
@@ -651,7 +666,29 @@
           </div>
         </div>
 
-        <div id="r2ConfigMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.4;"></div>
+        <!-- Cloud Kernel Management -->
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 14px;">
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <span>📦 Lõi Trình duyệt Chromium 151 (Cloud Kernel)</span>
+            <button class="btn btn-sm" type="button" onclick="checkKernelStatus()" style="font-size: 11px; padding: 2px 6px;">🔄 Kiểm tra</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 12px;">
+            <div style="background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+              <span style="color: var(--text-muted);">Trên Cloud R2:</span><br />
+              <strong id="kernelCloudStatusText" style="color: #94a3b8;">Đang kiểm tra...</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+              <span style="color: var(--text-muted);">Trên máy này:</span><br />
+              <strong id="kernelLocalStatusText" style="color: #94a3b8;">Đang kiểm tra...</strong>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn" type="button" id="btnDownloadKernel" onclick="downloadKernelFromCloud()" style="flex: 1; font-size: 12px; padding: 8px 12px;">☁️ Tải lõi Chrome 151 từ R2</button>
+            <button class="btn" type="button" id="btnUploadKernel" onclick="uploadKernelToCloud()" style="flex: 1; font-size: 12px; padding: 8px 12px;">📤 Đẩy lõi Chrome 151 lên R2</button>
+          </div>
+        </div>
+
+        <div id="r2ConfigMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.4; margin-top: 14px;"></div>
       </div>
       <div class="modal-footer">
         <button class="btn" type="button" onclick="closeR2ConfigModal()">Hủy</button>
@@ -1071,11 +1108,165 @@
         console.error('Failed to load R2 config:', err);
       }
 
+      await checkKernelStatus();
       modal.classList.add('active');
     }
 
     function closeR2ConfigModal() {
       document.getElementById('r2ConfigModal').classList.remove('active');
+    }
+
+    async function importSyncKeyFromUi() {
+      const input = document.getElementById('r2SyncKeyInput');
+      const syncKey = (input.value || '').trim();
+      if (!syncKey) {
+        alert('Vui lòng dán chuỗi Sync Key (bắt đầu bằng VTN-R2-)');
+        input.focus();
+        return;
+      }
+      if (!syncKey.startsWith('VTN-R2-')) {
+        alert('Định dạng không hợp lệ. Sync Key phải bắt đầu bằng "VTN-R2-".');
+        input.focus();
+        return;
+      }
+
+      const btn = document.getElementById('btnImportSyncKey');
+      btn.disabled = true;
+      btn.textContent = '⏳ Đang nhập...';
+
+      try {
+        const res = await fetch('/api/v1/cloud/import-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ syncKey })
+        }).then(r => r.json());
+
+        if (res.ok) {
+          showToast('✓ Đã nhập Sync Key và cấu hình R2 thành công!');
+          await openR2ConfigModal();
+          await updateCloudStatus();
+          await checkKernelStatus();
+        } else {
+          alert('Lỗi nhập Sync Key: ' + (res.error || 'Không xác định'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi nhập Key: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📥 Nhập Key';
+      }
+    }
+
+    async function copySyncKeyToClipboard() {
+      const btn = document.getElementById('btnCopySyncKey');
+      const oldText = btn ? btn.textContent : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang lấy...';
+      }
+      try {
+        const res = await fetch('/api/v1/cloud/sync-key').then(r => r.json());
+        if (res.ok && res.syncKey) {
+          const key = res.syncKey;
+          document.getElementById('r2SyncKeyInput').value = key;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(key);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = key;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          showToast('✓ Đã copy 1-Line Sync Key! Dán sang máy mới để tự động kết nối.');
+        } else {
+          alert('Chưa có cấu hình R2 hoàn chỉnh trên máy này để tạo Sync Key. Vui lòng cấu hình và lưu trước.');
+        }
+      } catch (err) {
+        alert('Lỗi lấy Sync Key: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = oldText;
+        }
+      }
+    }
+
+    async function checkKernelStatus() {
+      const cloudTxt = document.getElementById('kernelCloudStatusText');
+      const localTxt = document.getElementById('kernelLocalStatusText');
+      if (cloudTxt) cloudTxt.textContent = 'Đang kiểm tra...';
+      if (localTxt) localTxt.textContent = 'Đang kiểm tra...';
+
+      try {
+        const res = await fetch('/api/v1/cloud/kernel/status').then(r => r.json());
+        if (res.ok) {
+          if (cloudTxt) {
+            if (res.exists) {
+              const mb = res.contentLength ? (res.contentLength / (1024 * 1024)).toFixed(1) + ' MB' : 'Đã có';
+              cloudTxt.innerHTML = `<span style="color: #34d399;">✓ Đã có trên Cloud (${mb})</span>`;
+            } else {
+              cloudTxt.innerHTML = '<span style="color: #f59e0b;">Chưa có trên Cloud R2</span>';
+            }
+          }
+          if (localTxt) {
+            if (res.hasLocalKernel) {
+              localTxt.innerHTML = '<span style="color: #34d399;">✓ Đã cài đặt trên máy</span>';
+            } else {
+              localTxt.innerHTML = '<span style="color: #ef4444;">Chưa có trên máy</span>';
+            }
+          }
+        }
+      } catch (err) {
+        if (cloudTxt) cloudTxt.textContent = 'Lỗi kiểm tra';
+        if (localTxt) localTxt.textContent = 'Lỗi kiểm tra';
+      }
+    }
+
+    async function downloadKernelFromCloud() {
+      const btn = document.getElementById('btnDownloadKernel');
+      if (!confirm('Tải lõi Chromium 151 (~150MB) từ Cloudflare R2 về máy và giải nén vào thư mục bin/?')) return;
+      btn.disabled = true;
+      btn.textContent = '⏳ Đang tải & giải nén lõi...';
+      showToast('☁️ Đang tải lõi Chromium 151 từ R2 về máy, vui lòng chờ...');
+      try {
+        const res = await fetch('/api/v1/cloud/kernel/download', { method: 'POST' }).then(r => r.json());
+        if (res.ok) {
+          showToast('✓ Đã tải và giải nén lõi Chromium 151 thành công!');
+          await checkKernelStatus();
+        } else {
+          alert('Lỗi tải lõi: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối tải lõi: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '☁️ Tải lõi Chrome 151 từ R2';
+      }
+    }
+
+    async function uploadKernelToCloud() {
+      const btn = document.getElementById('btnUploadKernel');
+      if (!confirm('Nén và đẩy thư mục bin/151-0007 từ máy này lên Cloudflare R2?')) return;
+      btn.disabled = true;
+      btn.textContent = '⏳ Đang nén & đẩy lõi lên R2...';
+      showToast('📤 Đang nén và tải lõi Chromium 151 lên Cloudflare R2...');
+      try {
+        const res = await fetch('/api/v1/cloud/kernel/upload', { method: 'POST' }).then(r => r.json());
+        if (res.ok) {
+          const mb = (res.result.size / (1024 * 1024)).toFixed(1);
+          showToast(`✓ Đã đẩy lõi Chromium 151 (${mb} MB) lên R2 thành công!`);
+          await checkKernelStatus();
+        } else {
+          alert('Lỗi đẩy lõi: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối đẩy lõi: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Đẩy lõi Chrome 151 lên R2';
+      }
     }
 
     async function saveR2Config() {

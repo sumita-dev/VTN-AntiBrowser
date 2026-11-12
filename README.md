@@ -34,7 +34,43 @@
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt Trên Máy Mới (Sau khi Git Clone)
+## ⚡ Cài Đặt Tự Động 1 Lệnh Trên Máy Mới (Zero-Touch Setup)
+
+VTN Anti-Browser hỗ trợ **Zero-Touch Setup**: thiết lập hoàn toàn tự động từ A-Z trên một máy tính Windows mới tinh chỉ với **duy nhất 1 câu lệnh PowerShell**. Script tự động kiểm tra và cài đặt Git, Node.js >= 22 qua `winget`, clone mã nguồn, kết nối R2 qua Sync Key, tải lõi Chromium 151, đồng bộ toàn bộ Profiles và tạo Shortcut trên Desktop.
+
+### Cách 1: Chạy lệnh cài đặt nhanh (Khuyến nghị)
+Mở **PowerShell** trên máy mới và chạy:
+```powershell
+irm https://raw.githubusercontent.com/sumita-dev/VTN-AntiBrowser/main/setup.ps1 | iex
+```
+*Script sẽ hiển thị nhắc bạn dán chuỗi Sync Key (dạng `VTN-R2-...`) sao chép từ máy cũ để tự động kết nối và tải toàn bộ dữ liệu.*
+
+### Cách 2: Truyền trực tiếp 1-Line Sync Key
+Nếu bạn đã có chuỗi Sync Key từ máy cũ, truyền trực tiếp qua tham số `-SyncKey`:
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/sumita-dev/VTN-AntiBrowser/main/setup.ps1))) -SyncKey "VTN-R2-..."
+```
+
+---
+
+### 🔑 Cách lấy 1-Line Sync Key từ máy cũ
+1. Trên máy cũ đang chạy VTN Anti-Browser, mở Dashboard (`http://127.0.0.1:45678`).
+2. Nhấn nút **⚙️ Cấu hình R2** trên thanh Header.
+3. Nhấn nút **📋 Copy Sync Key** ở góc trên khung cấu hình.
+4. Chuỗi khóa định dạng `VTN-R2-...` đã được sao chép vào Clipboard. Mang chuỗi này dán sang máy mới là xong!
+
+---
+
+### 📤 Cách đẩy Lõi Trình duyệt Chromium 151 lên R2 (Chỉ làm 1 lần từ máy có lõi)
+Nếu bạn có một máy đã có sẵn thư mục `bin/151-0007/`, bạn có thể đẩy gói lõi lên Cloudflare R2 để các máy mới tự động tải về mà không cần copy thủ công:
+```bash
+npm run cloud:upload-kernel
+```
+*Hoặc nhấn nút **"📤 Đẩy lõi Chrome 151 lên R2"** trong cửa sổ Cấu hình R2 trên UI.*
+
+---
+
+## 🚀 Hướng Dẫn Cài Đặt Thủ Công (Sau khi Git Clone)
 
 Do chính sách giới hạn kích thước file của GitHub (< 100MB), các file nhị phân trình duyệt gốc (`bin/151-0007/chrome.dll` có dung lượng ~180MB) và cơ sở dữ liệu hồ sơ cá nhân (`data/`) được bảo vệ nghiêm ngặt trong file `.gitignore` để tránh rò rỉ token bí mật.
 
@@ -180,6 +216,8 @@ VTN-Browser/
 │   ├── profiles/                 # Thư mục chứa session & cache profile
 │   ├── r2_config.json            # Thông số kết nối Cloudflare R2
 │   └── vnt_profiles.db           # Cơ sở dữ liệu SQLite lưu trữ profile
+├── scripts/
+│   └── upload-kernel.js          # Script nén và đẩy lõi Chromium 151 lên Cloudflare R2
 ├── src/
 │   ├── api/
 │   │   └── server.js             # REST API server & phục vụ giao diện Web UI
@@ -187,7 +225,7 @@ VTN-Browser/
 │   │   ├── browser-manager.js    # Quản lý tiến trình chrome.exe & lifecycle CDP
 │   │   ├── cdp-probe.js          # Thẩm định vân tay qua CDP WebSocket
 │   │   ├── cipher.js             # Mã hóa bảo vệ cấu hình tham số C++ hook
-│   │   ├── cloud-sync.js         # Dịch vụ đồng bộ R2, nén tar.gz & Distributed Lock
+│   │   ├── cloud-sync.js         # Dịch vụ đồng bộ R2, nén tar.gz, 1-Line Sync Key & Kernel Sync
 │   │   ├── config-builder.js     # Sinh tham số dòng lệnh & flags khởi chạy Chrome
 │   │   ├── db.js                 # Quản lý cơ sở dữ liệu SQLite
 │   │   ├── fingerprint-gen.js    # 19 Blueprints phần cứng & bộ sinh vân tay chống trùng
@@ -196,12 +234,13 @@ VTN-Browser/
 │   ├── ui/
 │   │   ├── assets/               # Logo và biểu tượng Apple HIG
 │   │   └── index.html            # Giao diện Web Dashboard kính mờ (Glassmorphism)
-│   └── main.js                   # Điểm khởi chạy chính của ứng dụng
+│   └── main.js                   # Điểm khởi chạy chính & Smart Fallback browser
 ├── tests/
 │   └── e2e_verify.js             # Bộ kiểm thử E2E toàn diện
 ├── .gitignore                    # Chặn triệt để mã nhị phân >100MB và dữ liệu nhạy cảm
 ├── package.json                  # Cấu hình dự án & scripts Node.js
 ├── README.md                     # Tài liệu hướng dẫn sử dụng
+├── setup.ps1                     # Script cài đặt tự động 1 lệnh (Zero-Touch Setup)
 └── Start-VTN-Anti-Browser.bat    # File khởi động nhanh trên Windows
 ```
 
@@ -227,7 +266,7 @@ Bộ test tự động kiểm tra:
 3. Cơ sở dữ liệu SQLite CRUD và chức năng Auto-Create chống va chạm vân tay (16 profiles liên tiếp 0% trùng lặp).
 4. Khởi chạy 2 Profile đồng thời, kiểm tra spoofing độc lập và anti-tamper `[native code]` qua CDP (khi có `chrome.exe`).
 5. Giao diện Desktop Window `--app` và tương tác DOM thời gian thực (khi có `chrome.exe`).
-6. Zero-Dependency AWS SigV4 Client, Distributed Lock, Offline Degradation, Lock Ownership Protection, Tar Exclusion và REST API Cloud Sync (`/config`, `/status`, `/sync-all`, `/upload`, `/download`).
+6. Zero-Dependency AWS SigV4 Client, Distributed Lock, Offline Degradation, Lock Ownership Protection, Tar Exclusion, 1-Line Sync Key (`VTN-R2-...`) Export/Import, Kernel Sync (`hasKernelOnCloud`, `/kernel/status`) và REST API Cloud Sync (`/config`, `/status`, `/sync-all`, `/upload`, `/download`, `/sync-key`, `/import-key`).
 
 ---
 
