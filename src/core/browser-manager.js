@@ -6,6 +6,7 @@
  */
 
 const { spawn } = require('child_process');
+const { EventEmitter } = require('events');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -70,8 +71,9 @@ async function waitForCdpReady(port, maxWaitMs = 12000) {
   throw new Error(`Timed out waiting for Chrome CDP on port ${port}`);
 }
 
-class BrowserManager {
+class BrowserManager extends EventEmitter {
   constructor(options = {}) {
+    super();
     this.chromeExe = options.chromeExe || DEFAULT_CHROME_EXE;
     this.profilesDir = options.profilesDir || DEFAULT_PROFILES_DIR;
     this.db = options.db || null;
@@ -113,6 +115,67 @@ class BrowserManager {
     return syncPromise;
   }
 
+  _emitProfileState(profileId, state, session = null) {
+    const id = String(profileId);
+    const payload = {
+      profileId: id,
+      state,
+      activeSession: session
+        ? {
+            profileId: id,
+            pid: session.chromeProcess ? session.chromeProcess.pid : null,
+            debuggingPort: session.debuggingPort,
+            browserWsEndpoint: session.browserWsEndpoint,
+            pageWsEndpoint: session.pageWsEndpoint,
+            proxyPort: session.proxyTunnel ? session.proxyTunnel.localPort : null,
+            startedAt: session.startedAt,
+            geoInfo: session.geoInfo || null,
+            closing: Boolean(session.closing || state === 'closing')
+          }
+        : null,
+      timestamp: Date.now()
+    };
+    this.emit('profile:state', payload);
+  }
+
+  _closeCdpWatcher(sessionRecord) {
+    if (!sessionRecord || !sessionRecord._cdpWatcher) return;
+    const ws = sessionRecord._cdpWatcher;
+    sessionRecord._cdpWatcher = null;
+    try {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    } catch {}
+  }
+
+  _attachCdpCloseWatcher(profileId, sessionRecord) {
+    if (typeof WebSocket !== 'function' || !sessionRecord.browserWsEndpoint) return;
+    try {
+      const ws = new WebSocket(sessionRecord.browserWsEndpoint);
+      let hasOpened = false;
+      sessionRecord._cdpWatcher = ws;
+      ws.addEventListener('open', () => {
+        hasOpened = true;
+      });
+      ws.addEventListener('close', () => {
+        if (sessionRecord._cdpWatcher !== ws) return;
+        sessionRecord._cdpWatcher = null;
+        if (
+          hasOpened &&
+          this.activeSessions.get(profileId) === sessionRecord &&
+          !sessionRecord.closing &&
+          !sessionRecord._cleanedUp &&
+          (!sessionRecord.chromeProcess || sessionRecord.chromeProcess.exitCode === null)
+        ) {
+          sessionRecord.closing = true;
+          this._emitProfileState(profileId, 'closing', sessionRecord);
+        }
+      });
+      ws.addEventListener('error', () => {});
+    } catch {}
+  }
+
   /**
    * Lists all currently running profile sessions.
    */
@@ -127,7 +190,8 @@ class BrowserManager {
         pageWsEndpoint: sess.pageWsEndpoint,
         proxyPort: sess.proxyTunnel ? sess.proxyTunnel.localPort : null,
         startedAt: sess.startedAt,
-        geoInfo: sess.geoInfo || null
+        geoInfo: sess.geoInfo || null,
+        closing: Boolean(sess.closing)
       });
     }
     return list;
@@ -300,17 +364,26 @@ class BrowserManager {
       pageWsEndpoint: null,
       startedAt: new Date().toISOString(),
       geoInfo,
-      warnings
+      warnings,
+      closing: false,
+      _cleanedUp: false,
+      _cdpWatcher: null
     };
 
     this.activeSessions.set(profileId, sessionRecord);
 
     // Ensure automatic cleanup of GOST proxy tunnel and cloud sync when Chrome exits or errors
     const cleanup = () => {
+      if (sessionRecord._cleanedUp) return;
+      sessionRecord._cleanedUp = true;
+      this._closeCdpWatcher(sessionRecord);
       if (proxyTunnel && proxyTunnel.process) {
         try { proxyTunnel.process.kill(); } catch {}
       }
-      this.activeSessions.delete(profileId);
+      if (this.activeSessions.get(profileId) === sessionRecord) {
+        this.activeSessions.delete(profileId);
+      }
+      this._emitProfileState(profileId, 'stopped', null);
       this._syncAndReleaseLock(profileId).catch(() => {});
     };
     chromeProcess.once('exit', cleanup);
@@ -326,6 +399,9 @@ class BrowserManager {
       await this.closeProfile(profileId);
       throw err;
     }
+
+    this._attachCdpCloseWatcher(profileId, sessionRecord);
+    this._emitProfileState(profileId, 'running', sessionRecord);
 
     if (this.db) {
       try {
@@ -360,6 +436,12 @@ class BrowserManager {
     const sess = this.activeSessions.get(id);
     if (!sess) return false;
 
+    if (!sess.closing) {
+      sess.closing = true;
+      this._emitProfileState(id, 'closing', sess);
+    }
+    this._closeCdpWatcher(sess);
+
     if (sess.proxyTunnel && sess.proxyTunnel.process) {
       try { sess.proxyTunnel.process.kill(); } catch {}
     }
@@ -379,7 +461,13 @@ class BrowserManager {
         }
       });
     }
-    this.activeSessions.delete(id);
+    if (!sess._cleanedUp) {
+      sess._cleanedUp = true;
+      if (this.activeSessions.get(id) === sess) {
+        this.activeSessions.delete(id);
+      }
+      this._emitProfileState(id, 'stopped', null);
+    }
     await this._syncAndReleaseLock(id);
     return true;
   }

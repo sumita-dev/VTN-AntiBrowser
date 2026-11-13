@@ -103,6 +103,45 @@ function sendJson(res, statusCode, payload) {
 
 function createApiServer({ db, browserManager, uiDir }) {
   const resolvedUiDir = uiDir || path.resolve(__dirname, '..', 'ui');
+  const sseClients = new Set();
+
+  const broadcastProfileState = (payload) => {
+    if (sseClients.size === 0) return;
+    const message = `event: profile-state\ndata: ${JSON.stringify(payload)}\n\n`;
+    for (const client of sseClients) {
+      try {
+        client.write(message);
+      } catch {
+        sseClients.delete(client);
+      }
+    }
+  };
+
+  if (browserManager && typeof browserManager.on === 'function') {
+    browserManager.on('profile:state', broadcastProfileState);
+  }
+
+  const sseHeartbeat = setInterval(() => {
+    for (const client of sseClients) {
+      try {
+        client.write(': ping\n\n');
+      } catch {
+        sseClients.delete(client);
+      }
+    }
+  }, 25000);
+  if (typeof sseHeartbeat.unref === 'function') sseHeartbeat.unref();
+
+  const cleanupSse = () => {
+    clearInterval(sseHeartbeat);
+    if (browserManager && typeof browserManager.off === 'function') {
+      browserManager.off('profile:state', broadcastProfileState);
+    }
+    for (const client of sseClients) {
+      try { client.end(); } catch {}
+    }
+    sseClients.clear();
+  };
 
   const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
@@ -147,7 +186,25 @@ function createApiServer({ db, browserManager, uiDir }) {
         }
       }
 
-      // 2. System Status & Blueprints
+      // 2. System Status, Realtime SSE Events & Blueprints
+      if (req.method === 'GET' && pathname === '/api/v1/events') {
+        if (typeof req.setTimeout === 'function') req.setTimeout(0);
+        if (typeof res.setTimeout === 'function') res.setTimeout(0);
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.write(': connected\n\n');
+        sseClients.add(res);
+        const removeClient = () => sseClients.delete(res);
+        req.on('close', removeClient);
+        res.on('close', removeClient);
+        res.on('error', removeClient);
+        return;
+      }
+
       if (req.method === 'GET' && pathname === '/api/v1/status') {
         return sendJson(res, 200, {
           ok: true,
@@ -231,7 +288,8 @@ function createApiServer({ db, browserManager, uiDir }) {
                   debuggingPort: sess.debuggingPort,
                   browserWsEndpoint: sess.browserWsEndpoint,
                   pageWsEndpoint: sess.pageWsEndpoint,
-                  startedAt: sess.startedAt
+                  startedAt: sess.startedAt,
+                  closing: Boolean(sess.closing)
                 }
               : null
           });
@@ -681,6 +739,16 @@ function createApiServer({ db, browserManager, uiDir }) {
       }
     }
   });
+
+  const origClose = server.close.bind(server);
+  server.close = (cb) => {
+    cleanupSse();
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
+    return origClose(cb);
+  };
+  server.on('close', cleanupSse);
 
   return server;
 }

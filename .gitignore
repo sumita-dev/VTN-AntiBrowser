@@ -23,3 +23,6 @@ Desktop.ini
 
 # Sensitive automation configs (cookies/credentials)
 automation/config/accounts_facebook.json
+
+# Portable & installer build outputs
+dist/

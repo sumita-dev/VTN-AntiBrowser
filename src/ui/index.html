@@ -289,6 +289,7 @@
     .badge-win { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); }
     .badge-mac { color: #c084fc; border-color: rgba(192, 132, 252, 0.3); }
     .badge-running { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.4); }
+    .badge-closing { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); }
     .badge-stopped { color: var(--text-muted); }
 
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
@@ -1016,6 +1017,54 @@
       syncMemoryDropdownForCores(bp, cores, currentMem);
     }
 
+    let profileEventSource = null;
+    let sseHasConnectedOnce = false;
+    let profilesStateEpoch = 0;
+
+    function connectProfileEvents() {
+      if (typeof EventSource !== 'function') return;
+      if (profileEventSource) {
+        try { profileEventSource.close(); } catch {}
+      }
+      const es = new EventSource('/api/v1/events');
+      profileEventSource = es;
+
+      es.addEventListener('open', () => {
+        if (sseHasConnectedOnce) {
+          loadProfiles();
+        }
+        sseHasConnectedOnce = true;
+      });
+
+      es.addEventListener('profile-state', (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (!payload || !payload.profileId) return;
+          const idx = allProfiles.findIndex((p) => String(p.id) === String(payload.profileId));
+          if (idx === -1) {
+            loadProfiles();
+            return;
+          }
+          const target = allProfiles[idx];
+          profilesStateEpoch++;
+          if (payload.state === 'running') {
+            target.running = true;
+            target.activeSession = payload.activeSession || target.activeSession || { closing: false };
+          } else if (payload.state === 'closing') {
+            target.running = true;
+            target.activeSession = Object.assign({}, target.activeSession || {}, payload.activeSession || {}, { closing: true });
+          } else if (payload.state === 'stopped') {
+            target.running = false;
+            target.activeSession = null;
+          }
+          document.getElementById('statRunning').textContent = allProfiles.filter(p => p.running).length;
+          renderTable();
+        } catch (err) {
+          console.error('SSE profile-state parse error:', err);
+        }
+      });
+    }
+
     async function init() {
       const bpRes = await fetch('/api/v1/blueprints').then(r => r.json());
       if (bpRes.ok) {
@@ -1025,14 +1074,19 @@
       }
       await loadProfiles();
       await updateCloudStatus();
-      setInterval(loadProfiles, 4000);
+      connectProfileEvents();
+      setInterval(loadProfiles, 30000);
       setInterval(updateCloudStatus, 15000);
     }
 
     async function loadProfiles(showErrorToast = false) {
+      const reqEpoch = profilesStateEpoch;
       try {
         const res = await fetch('/api/v1/profiles').then(r => r.json());
         if (res.ok) {
+          if (reqEpoch !== profilesStateEpoch) {
+            return true;
+          }
           allProfiles = res.profiles;
           document.getElementById('statTotal').textContent = allProfiles.length;
           document.getElementById('statRunning').textContent = allProfiles.filter(p => p.running).length;
@@ -1124,15 +1178,20 @@
             </td>
             <td>
               ${p.running
-                ? `<span class="badge badge-running">● Đang chạy (Port ${p.activeSession?.debuggingPort})</span>
-                   <div class="subtext mono">PID: ${p.activeSession?.pid}</div>`
+                ? (p.activeSession?.closing
+                    ? `<span class="badge badge-closing">⏳ Đang đóng...</span>
+                       <div class="subtext mono">PID: ${p.activeSession?.pid || '-'}</div>`
+                    : `<span class="badge badge-running">● Đang chạy (Port ${p.activeSession?.debuggingPort})</span>
+                       <div class="subtext mono">PID: ${p.activeSession?.pid}</div>`)
                 : `<span class="badge badge-stopped">○ Đã đóng</span>`
               }
             </td>
             <td style="text-align: right; white-space: nowrap;">
               ${p.running
-                ? `<button class="btn btn-sm" onclick="probeProfile('${p.id}')">🔍 Kiểm tra Vân tay</button>
-                   <button class="btn btn-sm btn-danger" onclick="closeProfile('${p.id}')">■ Đóng</button>`
+                ? (p.activeSession?.closing
+                    ? `<button class="btn btn-sm" disabled style="opacity: 0.6; cursor: not-allowed;">⏳ Đang đóng...</button>`
+                    : `<button class="btn btn-sm" onclick="probeProfile('${p.id}')">🔍 Kiểm tra Vân tay</button>
+                       <button class="btn btn-sm btn-danger" onclick="closeProfile('${p.id}')">■ Đóng</button>`)
                 : `<button class="btn btn-sm btn-success" onclick="openProfile('${p.id}')">▶ Mở Trình Duyệt</button>
                    <button class="btn btn-sm" onclick="uploadProfileToCloud('${p.id}')" title="Đẩy profile lên Cloudflare R2">☁️ Đẩy</button>
                    <button class="btn btn-sm btn-danger" onclick="deleteProfile('${p.id}')">🗑</button>`
@@ -1283,12 +1342,21 @@
     }
 
     async function closeProfile(id) {
-      await fetch('/api/v1/profile/close', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId: id })
-      });
-      await loadProfiles();
+      const target = allProfiles.find(p => String(p.id) === String(id));
+      if (target && target.running) {
+        profilesStateEpoch++;
+        target.activeSession = Object.assign({}, target.activeSession || {}, { closing: true });
+        renderTable();
+      }
+      try {
+        await fetch('/api/v1/profile/close', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: id })
+        });
+      } finally {
+        await loadProfiles();
+      }
     }
 
     async function probeProfile(id) {

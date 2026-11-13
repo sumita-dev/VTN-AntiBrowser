@@ -7,9 +7,10 @@
     "start": "node src/main.js",
     "start:app": "node src/main.js --app-window",
     "cloud:upload-kernel": "node scripts/upload-kernel.js",
+    "build:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1",
     "test": "node tests/e2e_verify.js"
   },
-  "engine": {
+  "engines": {
     "node": ">=22.0.0"
   }
 }
