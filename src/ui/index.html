@@ -368,6 +368,222 @@
       overflow-x: auto;
       color: #a7f3d0;
     }
+
+    /* Apple-Inspired AI Hub Styles */
+    .btn-ai-hub {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.18) 0%, rgba(255, 85, 0, 0.3) 100%);
+      border: 1px solid rgba(255, 107, 0, 0.5);
+      color: #ffa033;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(255, 107, 0, 0.18);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-ai-hub:hover {
+      background: var(--accent-gradient);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px var(--accent-glow);
+    }
+    .btn-ai-action {
+      background: rgba(255, 107, 0, 0.12);
+      border: 1px solid rgba(255, 107, 0, 0.38);
+      color: #ff8a00;
+      font-weight: 600;
+      transition: all 0.18s ease;
+    }
+    .btn-ai-action:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    .apple-segmented-control {
+      display: flex;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+    .apple-seg-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .apple-seg-btn.active {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    .apple-seg-btn:hover:not(.active) {
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .apple-auth-card {
+      background: linear-gradient(145deg, rgba(22, 32, 46, 0.85) 0%, rgba(17, 24, 39, 0.95) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .apple-auth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .apple-auth-badge.connected {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #34d399;
+    }
+    .apple-auth-badge.disconnected {
+      background: rgba(148, 163, 184, 0.12);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #94a3b8;
+    }
+    .apple-persona-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .apple-persona-chip:hover {
+      background: var(--accent-subtle);
+      border-color: var(--accent-border);
+      color: #ff8a00;
+      transform: translateY(-1px);
+    }
+    .agy-sub-seg {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+      margin-bottom: 14px;
+    }
+    .agy-sub-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .agy-sub-btn.active {
+      background: rgba(255, 107, 0, 0.18);
+      color: #ff9f43;
+      border: 1px solid rgba(255, 107, 0, 0.35);
+    }
+    .agy-box {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .agy-info-banner {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .agy-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text-main);
+    }
+    .agy-chip button {
+      background: none;
+      border: none;
+      color: #f87171;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0 2px;
+    }
+    .agy-account-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 6px;
+    }
+    .agy-account-row.active {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .ai-models-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .ai-model-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
   </style>
 </head>
 <body>
@@ -423,13 +639,13 @@
       </div>
     </div>
     <div class="header-actions">
-      <span class="status-pill" id="kernelStatus">● Kernel 151 Ready</span>
       <span class="status-pill" id="cloudStatusPill" style="background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); color: #60a5fa;">☁️ R2: Đang kết nối...</span>
       <button class="btn" id="btnCloudConfig" onclick="openR2ConfigModal()" title="Cài đặt thông số kết nối Cloudflare R2">⚙️ Cấu hình R2</button>
       <button class="btn" id="btnCloudSync" onclick="syncAllCloud()" title="Đồng bộ tất cả Profile từ Cloudflare R2">☁️ Đồng bộ Cloud (R2)</button>
-      <button class="btn" onclick="loadProfiles()">↻ Làm mới</button>
-      <button class="btn btn-auto" id="btnAutoCreate" onclick="autoCreateUniqueProfile()">⚡ TẠO PROFILE MỚI TỰ ĐỘNG (Auto Unique)</button>
-      <button class="btn btn-primary" onclick="openCreateModal()">+ Tạo Profile Tùy Chỉnh</button>
+      <button class="btn-ai-hub" id="btnAiHub" onclick="openAiHubModal()" title="Cổng kết nối AI & Antigravity 2.0 OAuth">🤖 AI Hub</button>
+      <button class="btn" id="btnRefreshProfiles" onclick="refreshProfilesManual()">↻ Làm mới</button>
+      <button class="btn btn-auto" id="btnAutoCreate" onclick="autoCreateUniqueProfile()" style="display: inline-flex; align-items: center; gap: 6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Profile tự động</button>
+      <button class="btn btn-primary" onclick="openCreateModal()" style="display: inline-flex; align-items: center; gap: 6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Profile tùy chỉnh</button>
     </div>
   </header>
 
@@ -813,7 +1029,7 @@
       setInterval(updateCloudStatus, 15000);
     }
 
-    async function loadProfiles() {
+    async function loadProfiles(showErrorToast = false) {
       try {
         const res = await fetch('/api/v1/profiles').then(r => r.json());
         if (res.ok) {
@@ -821,9 +1037,34 @@
           document.getElementById('statTotal').textContent = allProfiles.length;
           document.getElementById('statRunning').textContent = allProfiles.filter(p => p.running).length;
           renderTable();
+          return true;
         }
+        if (showErrorToast) showToast('Lỗi làm mới danh sách Profile: ' + (res?.error || 'Unknown'), true);
+        return false;
       } catch (e) {
         console.error(e);
+        if (showErrorToast) showToast('Lỗi làm mới danh sách Profile: ' + e.message, true);
+        return false;
+      }
+    }
+
+    async function refreshProfilesManual() {
+      const btn = document.getElementById('btnRefreshProfiles');
+      const oldHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang làm mới...';
+      }
+      try {
+        const [ok] = await Promise.all([loadProfiles(true), updateCloudStatus()]);
+        if (ok) {
+          showToast(`✓ Đã làm mới ${allProfiles.length} Profile`);
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = oldHtml;
+        }
       }
     }
 
@@ -940,7 +1181,7 @@
 
     async function autoCreateUniqueProfile() {
       const btn = document.getElementById('btnAutoCreate');
-      const oldText = btn ? btn.textContent : '';
+      const oldHtml = btn ? btn.innerHTML : '';
       if (btn) {
         btn.disabled = true;
         btn.textContent = '⏳ Đang tạo Profile độc nhất...';
@@ -965,7 +1206,7 @@
       } finally {
         if (btn) {
           btn.disabled = false;
-          btn.textContent = oldText;
+          btn.innerHTML = oldHtml;
         }
       }
     }
@@ -1518,7 +1759,739 @@
       }
     });
 
+
+    // ==========================================
+    // AI AUTOMATION HUB & ANTIGRAVITY OAUTH SCRIPT
+    // ==========================================
+    let currentAiConfig = {};
+    let agyPollTimer = null;
+
+    function openAiHubModal() {
+      const modal = document.getElementById('aiHubModal');
+      if (modal) {
+        modal.classList.add('active');
+        loadAiStatus();
+      }
+    }
+
+    function closeAiHubModal() {
+      if (agyPollTimer) {
+        clearInterval(agyPollTimer);
+        agyPollTimer = null;
+      }
+      const modal = document.getElementById('aiHubModal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
+    function switchAiTab(tabName) {
+      document.querySelectorAll('.apple-seg-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.ai-tab-pane').forEach(p => p.style.display = 'none');
+
+      if (tabName === 'auth') {
+        const btn = document.getElementById('tabBtnAuth');
+        const pane = document.getElementById('aiTabAuth');
+        if (btn) btn.classList.add('active');
+        if (pane) pane.style.display = 'block';
+      } else if (tabName === 'persona') {
+        const btn = document.getElementById('tabBtnPersona');
+        const pane = document.getElementById('aiTabPersona');
+        if (btn) btn.classList.add('active');
+        if (pane) pane.style.display = 'block';
+      } else if (tabName === 'scenarios') {
+        const btn = document.getElementById('tabBtnScenarios');
+        const pane = document.getElementById('aiTabScenarios');
+        if (btn) btn.classList.add('active');
+        if (pane) pane.style.display = 'block';
+      }
+    }
+
+    let agyPendingEmails = [];
+    let agyDefaultModels = [
+      'gemini-3.8-flash',
+      'gemini-3.6-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-3-flash-preview',
+      'gemini-flash-latest',
+      'gemini-flash-lite-latest',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite'
+    ];
+
+    function switchAgySubTab(subTab) {
+      document.querySelectorAll('.agy-sub-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.agy-sub-pane').forEach(p => p.style.display = 'none');
+      const map = {
+        oauth: ['subTabBtnOAuth', 'agySubTabOAuth'],
+        json: ['subTabBtnJson', 'agySubTabJson'],
+        local: ['subTabBtnLocal', 'agySubTabLocal']
+      };
+      const pair = map[subTab] || map.oauth;
+      const btn = document.getElementById(pair[0]);
+      const pane = document.getElementById(pair[1]);
+      if (btn) btn.classList.add('active');
+      if (pane) pane.style.display = 'block';
+    }
+
+    function renderPendingAgyEmails() {
+      const container = document.getElementById('agyPendingEmailsList');
+      if (!container) return;
+      if (!agyPendingEmails.length) {
+        container.innerHTML = '<span style="font-size: 11px; color: var(--text-muted);">Chưa có email chờ xác thực.</span>';
+        return;
+      }
+      container.innerHTML = agyPendingEmails.map((email, idx) => `
+        <span class="agy-chip">
+          <span>${escapeHtml(email)}</span>
+          <button type="button" title="Xóa" onclick="removePendingAgyEmail(${idx})">✕</button>
+        </span>
+      `).join('');
+    }
+
+    function addPendingAgyEmail() {
+      const input = document.getElementById('agyPendingEmailInput');
+      if (!input) return;
+      const email = input.value.trim();
+      if (!email) return;
+      if (!agyPendingEmails.some(e => e.toLowerCase() === email.toLowerCase())) {
+        agyPendingEmails.push(email);
+      }
+      input.value = '';
+      renderPendingAgyEmails();
+    }
+
+    function removePendingAgyEmail(idx) {
+      agyPendingEmails.splice(idx, 1);
+      renderPendingAgyEmails();
+    }
+
+    async function savePendingAgyEmails() {
+      try {
+        const res = await fetch('/api/v1/ai/accounts/pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pendingEmails: agyPendingEmails })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          agyPendingEmails = data.pendingEmails || [];
+          renderPendingAgyEmails();
+          showToast('✓ Đã lưu danh sách chờ xác thực', false);
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không lưu được'), true);
+        }
+      } catch (err) {
+        showToast('Lỗi lưu thẻ chờ: ' + err.message, true);
+      }
+    }
+
+    function renderAgyAccounts(auth) {
+      const badge = document.getElementById('agyAuthBadge');
+      const listEl = document.getElementById('agyAccountsList');
+      const accounts = Array.isArray(auth.accounts) ? auth.accounts : [];
+
+      if (badge) {
+        if (auth.authenticated) {
+          badge.className = 'apple-auth-badge connected';
+          badge.textContent = `🟢 ${auth.email || 'Đã kết nối'} (${accounts.length})`;
+        } else {
+          badge.className = 'apple-auth-badge disconnected';
+          badge.textContent = '⚪ Chưa kết nối';
+        }
+      }
+
+      if (!listEl) return;
+      if (!accounts.length) {
+        listEl.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 8px 0;">Chưa có tài khoản AGY nào được kết nối.</div>';
+        return;
+      }
+
+      listEl.innerHTML = accounts.map(acc => `
+        <div class="agy-account-row ${acc.isActive ? 'active' : ''}">
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 13px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis;">
+              ${escapeHtml(acc.email)}
+              ${acc.isActive ? '<span style="font-size: 11px; color: #34d399; margin-left: 6px;">● Đang dùng</span>' : ''}
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted);">
+              ${escapeHtml(acc.authMethod || 'oauth')} &bull; ${acc.isExpired ? '<span style="color:#f59e0b;">Cần refresh</span>' : '<span style="color:#34d399;">Hợp lệ</span>'}
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            ${acc.isActive ? '' : `<button type="button" class="btn btn-sm" onclick="selectAgyAccount('${escapeHtml(acc.id)}')">Chọn</button>`}
+            <button type="button" class="btn btn-sm" style="color: #f87171; border-color: rgba(239,68,68,0.35);" onclick="deleteAgyAccount('${escapeHtml(acc.id)}')">✕ Xóa</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAiModelsGrid(defaultModels, selectedModels) {
+      const grid = document.getElementById('aiModelsGrid');
+      if (!grid) return;
+      const allModels = (Array.isArray(defaultModels) && defaultModels.length) ? defaultModels : agyDefaultModels;
+      const selectedSet = new Set((Array.isArray(selectedModels) && selectedModels.length) ? selectedModels : allModels);
+
+      grid.innerHTML = allModels.map(m => `
+        <label class="ai-model-item">
+          <input type="checkbox" class="ai-model-checkbox" value="${escapeHtml(m)}" ${selectedSet.has(m) ? 'checked' : ''} onchange="updateAiMatrixSlotBadge()" />
+          <span>${escapeHtml(m)}</span>
+        </label>
+      `).join('');
+      updateAiMatrixSlotBadge();
+    }
+
+    function updateAiMatrixSlotBadge() {
+      const badge = document.getElementById('aiMatrixSlotBadge');
+      const keysEl = document.getElementById('aiApiKeysInput');
+      if (!badge || !keysEl) return;
+      const keyCount = keysEl.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean).length;
+      const modelCount = document.querySelectorAll('.ai-model-checkbox:checked').length;
+      const slots = keyCount * modelCount;
+      badge.textContent = `${keyCount} keys × ${modelCount} models = ${slots} slots`;
+    }
+
+    async function loadAiStatus() {
+      try {
+        const res = await fetch('/api/v1/ai/status');
+        const data = await res.json();
+        if (data && data.ok) {
+          const auth = data.auth || {};
+          const cfg = data.config || {};
+          currentAiConfig = cfg;
+
+          agyPendingEmails = Array.isArray(auth.pendingEmails) ? [...auth.pendingEmails] : [];
+          renderPendingAgyEmails();
+          renderAgyAccounts(auth);
+
+          if (Array.isArray(cfg.defaultModels) && cfg.defaultModels.length) {
+            agyDefaultModels = cfg.defaultModels;
+          }
+
+          const apiKeysInput = document.getElementById('aiApiKeysInput');
+          if (apiKeysInput) {
+            const keysList = Array.isArray(cfg.apiKeysMasked) ? cfg.apiKeysMasked : (Array.isArray(cfg.apiKeys) ? cfg.apiKeys : []);
+            apiKeysInput.value = keysList.join('\n');
+          }
+          renderAiModelsGrid(agyDefaultModels, cfg.models);
+
+          const personaInput = document.getElementById('aiPersonaInput');
+          if (personaInput) personaInput.value = cfg.persona || 'Ban la nguoi dung mang xa hoi tu nhien, tich cuc, binh luan ngan gon sat noi dung.';
+
+          const localeSelect = document.getElementById('aiLocaleSelect');
+          if (localeSelect) localeSelect.value = cfg.locale || 'VN';
+
+          const maxCharsInput = document.getElementById('aiMaxChars');
+          if (maxCharsInput) maxCharsInput.value = cfg.maxChars || 120;
+
+          const autoLike = document.getElementById('aiAutoLike');
+          if (autoLike) autoLike.checked = cfg.autoLike !== false;
+
+          const autoComment = document.getElementById('aiAutoComment');
+          if (autoComment) autoComment.checked = cfg.autoComment !== false;
+
+          const autoJoin = document.getElementById('aiAutoJoin');
+          if (autoJoin) autoJoin.checked = cfg.autoJoinGroup !== false;
+
+          const targetGroupsInput = document.getElementById('aiTargetGroups');
+          if (targetGroupsInput) {
+            targetGroupsInput.value = Array.isArray(cfg.targetGroups)
+              ? cfg.targetGroups.join('\n')
+              : (cfg.targetGroups || '');
+          }
+        }
+      } catch (err) {
+        showToast('Lỗi nạp cấu hình AI: ' + err.message, true);
+      }
+    }
+
+    async function startAgyOAuth() {
+      try {
+        showToast('Đang khởi tạo luồng Google OAuth qua Antigravity...', false);
+        const pendingEmailInput = document.getElementById('agyPendingEmailInput');
+        const pendingEmail = (pendingEmailInput && pendingEmailInput.value.trim()) || agyPendingEmails[0] || '';
+        const res = await fetch('/api/v1/ai/oauth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ openBrowser: true, pendingEmail })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const linkInput = document.getElementById('agyAuthLinkInput');
+          if (linkInput) linkInput.value = data.url || '';
+          showToast('Đã mở trình duyệt! Hoàn tất đăng nhập Google hoặc dán URL callback bên dưới.', false);
+
+          if (agyPollTimer) {
+            clearInterval(agyPollTimer);
+            agyPollTimer = null;
+          }
+          let attempts = 0;
+          const prevCount = Array.isArray(currentAiConfig._lastAccCount) ? currentAiConfig._lastAccCount : null;
+          agyPollTimer = setInterval(async () => {
+            attempts++;
+            try {
+              const sRes = await fetch('/api/v1/ai/status');
+              const sData = await sRes.json();
+              if (sData.ok && sData.auth) {
+                renderAgyAccounts(sData.auth);
+                agyPendingEmails = Array.isArray(sData.auth.pendingEmails) ? sData.auth.pendingEmails : agyPendingEmails;
+                renderPendingAgyEmails();
+              }
+            } catch (e) {}
+            if (attempts >= 60) {
+              clearInterval(agyPollTimer);
+              agyPollTimer = null;
+            }
+          }, 2500);
+        } else {
+          showToast('Lỗi bắt đầu OAuth: ' + data.error, true);
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối OAuth: ' + err.message, true);
+      }
+    }
+
+    async function verifyAgyOAuthStatus() {
+      await loadAiStatus();
+      showToast('Đã cập nhật trạng thái tài khoản AGY', false);
+    }
+
+    async function copyAgyAuthLink() {
+      const linkInput = document.getElementById('agyAuthLinkInput');
+      if (!linkInput || !linkInput.value) {
+        showToast('Chưa có liên kết xác thực. Hãy bấm "Bắt đầu xác thực OAuth" trước.', true);
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(linkInput.value);
+        showToast('✓ Đã sao chép liên kết xác thực', false);
+      } catch {
+        linkInput.select();
+        document.execCommand('copy');
+        showToast('✓ Đã sao chép liên kết xác thực', false);
+      }
+    }
+
+    async function submitManualAgyCallback() {
+      const input = document.getElementById('agyManualCallbackInput');
+      const callbackUrl = input ? input.value.trim() : '';
+      if (!callbackUrl) {
+        showToast('Vui lòng dán URL callback vào ô nhập.', true);
+        return;
+      }
+      try {
+        const res = await fetch('/api/v1/ai/oauth/callback-manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ callbackUrl })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          if (input) input.value = '';
+          if (agyPollTimer) {
+            clearInterval(agyPollTimer);
+            agyPollTimer = null;
+          }
+          await loadAiStatus();
+          showToast('🎉 Xác thực thủ công thành công!', false);
+        } else {
+          showToast('Lỗi callback: ' + (data.error || 'Không hợp lệ'), true);
+        }
+      } catch (err) {
+        showToast('Lỗi xác thực thủ công: ' + err.message, true);
+      }
+    }
+
+    async function importAgyJson() {
+      const input = document.getElementById('agyImportJsonInput');
+      const jsonText = input ? input.value.trim() : '';
+      if (!jsonText) {
+        showToast('Vui lòng dán nội dung JSON trước khi nhập.', true);
+        return;
+      }
+      try {
+        const res = await fetch('/api/v1/ai/accounts/import-json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonText })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          if (input) input.value = '';
+          await loadAiStatus();
+          showToast(`✓ Đã nhập ${data.importedCount || 0} tài khoản từ JSON!`, false);
+        } else {
+          showToast('Lỗi nhập JSON: ' + (data.error || 'Thất bại'), true);
+        }
+      } catch (err) {
+        showToast('Lỗi nhập JSON: ' + err.message, true);
+      }
+    }
+
+    async function importAgyLocal() {
+      const feedback = document.getElementById('agyLocalImportFeedback');
+      try {
+        if (feedback) feedback.textContent = 'Đang quét ~/.gemini ...';
+        const res = await fetch('/api/v1/ai/accounts/import-local', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          await loadAiStatus();
+          const msg = `✓ Đã quét và nhập ${data.importedCount || 0} tài khoản từ Antigravity Local.`;
+          if (feedback) feedback.textContent = msg;
+          showToast(msg, false);
+        } else {
+          if (feedback) feedback.textContent = 'Lỗi: ' + (data.error || 'Thất bại');
+          showToast('Lỗi quét local: ' + (data.error || 'Thất bại'), true);
+        }
+      } catch (err) {
+        if (feedback) feedback.textContent = 'Lỗi: ' + err.message;
+        showToast('Lỗi quét local: ' + err.message, true);
+      }
+    }
+
+    async function selectAgyAccount(id) {
+      try {
+        const res = await fetch('/api/v1/ai/accounts/select', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.ok && data.auth) {
+          renderAgyAccounts(data.auth);
+          showToast('✓ Đã chuyển tài khoản AGY đang hoạt động', false);
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không thể chọn'), true);
+        }
+      } catch (err) {
+        showToast('Lỗi chọn tài khoản: ' + err.message, true);
+      }
+    }
+
+    async function deleteAgyAccount(id) {
+      if (!confirm('Xóa tài khoản AGY này khỏi danh sách?')) return;
+      try {
+        const res = await fetch('/api/v1/ai/accounts/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.ok && data.auth) {
+          renderAgyAccounts(data.auth);
+          showToast('✓ Đã xóa tài khoản AGY', false);
+        } else {
+          showToast('Lỗi: ' + (data.error || 'Không thể xóa'), true);
+        }
+      } catch (err) {
+        showToast('Lỗi xóa tài khoản: ' + err.message, true);
+      }
+    }
+
+    async function saveAiConfigFromUi() {
+      const apiKeysInput = document.getElementById('aiApiKeysInput');
+      const personaInput = document.getElementById('aiPersonaInput');
+      const localeSelect = document.getElementById('aiLocaleSelect');
+      const maxCharsInput = document.getElementById('aiMaxChars');
+      const autoLike = document.getElementById('aiAutoLike');
+      const autoComment = document.getElementById('aiAutoComment');
+      const autoJoin = document.getElementById('aiAutoJoin');
+      const targetGroupsInput = document.getElementById('aiTargetGroups');
+
+      const parsedApiKeys = apiKeysInput
+        ? apiKeysInput.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+        : [];
+      const selectedModels = Array.from(document.querySelectorAll('.ai-model-checkbox:checked'))
+        .map(el => el.value)
+        .filter(Boolean);
+
+      const parsedMaxChars = maxCharsInput ? Math.min(300, Math.max(40, parseInt(maxCharsInput.value, 10) || 120)) : 120;
+      const parsedTargetGroups = targetGroupsInput
+        ? targetGroupsInput.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+        : [];
+
+      const payload = {
+        ...currentAiConfig,
+        apiKeys: parsedApiKeys,
+        models: selectedModels.length ? selectedModels : agyDefaultModels,
+        persona: personaInput ? personaInput.value.trim() : '',
+        locale: localeSelect ? localeSelect.value : 'VN',
+        maxChars: parsedMaxChars,
+        autoLike: autoLike ? autoLike.checked : true,
+        autoComment: autoComment ? autoComment.checked : true,
+        autoJoinGroup: autoJoin ? autoJoin.checked : true,
+        targetGroups: parsedTargetGroups
+      };
+
+      try {
+        const res = await fetch('/api/v1/ai/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          currentAiConfig = data.config || payload;
+          showToast('✓ Đã lưu thiết lập AI Automation thành công!', false);
+          closeAiHubModal();
+        } else {
+          showToast('Lỗi lưu cấu hình: ' + (data.error || 'Thất bại'), true);
+        }
+      } catch (err) {
+        showToast('Lỗi lưu cấu hình: ' + err.message, true);
+      }
+    }
+
+    function applyPersonaPreset(type) {
+      const input = document.getElementById('aiPersonaInput');
+      if (!input) return;
+      if (type === 'tech') {
+        input.value = 'Ban la mot ky su lap trinh phan mem giau kinh nghiem tai Viet Nam. Hay doc bai viet va binh luan ngan gon, suc tich duoi 100 ky tu voi goc nhin chuyen mon, mang tinh xay dung.';
+      } else if (type === 'friendly') {
+        input.value = 'Ban la mot nguoi ban coi mo tren mang xa hoi. Hay doc bai viet va viet binh luan khen ngoi, dong vien mot cach chan thanh, am ap, tu nhien.';
+      } else if (type === 'question') {
+        input.value = 'Ban la mot nguoi ham hoc hoi, thich trao doi. Hay doc bai viet va dat lai 1 cau hoi rat thu vi, thong minh ve noi dung de khoi mo thao luan them.';
+      } else if (type === 'casual') {
+        input.value = 'Ban la mot thanh vien tre trung, vui ve. Hay viet 1 binh luan hai huoc, bat trend nhe nhang, than thien duoi 100 ky tu.';
+      }
+      showToast('Đã áp dụng mẫu Persona: ' + type, false);
+    }
+
+    async function runAiAutomation(profileId) {
+      if (!confirm(`Khởi chạy AI Automation tự động cho Profile [${profileId}]?`)) return;
+      showToast(`🤖 Đang khởi chạy AI trên Profile ${profileId}...`, false);
+
+      try {
+        const res = await fetch('/api/v1/ai/run-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId, allowComment: true })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`✓ ${data.message}. Đang thực thi tương tác!`, false);
+          setTimeout(() => loadProfiles(), 1500);
+        } else {
+          showToast('Lỗi khởi chạy AI: ' + data.error, true);
+        }
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ: ' + err.message, true);
+      }
+    }
+
     init();
   </script>
+
+  <!-- AI Automation Hub Modal (Apple-Inspired Design) -->
+  <div class="modal-backdrop" id="aiHubModal">
+    <div class="modal" style="max-width: 680px;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding: 18px 24px;">
+        <div>
+          <h3 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 22px;">🤖</span> AI Automation Hub
+            <span class="anti-badge" style="font-size: 12px; font-weight: 700; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">&bull; Antigravity 2.0</span>
+          </h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Cổng kết nối Google OAuth, thiết lập Persona và điều khiển tự động hóa</p>
+        </div>
+        <button class="btn btn-sm" onclick="closeAiHubModal()">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 24px; max-height: 76vh; overflow-y: auto;">
+        <!-- Apple Segmented Control -->
+        <div class="apple-segmented-control">
+          <button class="apple-seg-btn active" id="tabBtnAuth" onclick="switchAiTab('auth')">🔗 Tài khoản AGY &amp; Key</button>
+          <button class="apple-seg-btn" id="tabBtnPersona" onclick="switchAiTab('persona')">🎭 Persona &amp; Văn Phong</button>
+          <button class="apple-seg-btn" id="tabBtnScenarios" onclick="switchAiTab('scenarios')">⚙️ Kịch Bản &amp; Cài Đặt</button>
+        </div>
+
+        <!-- TAB 1: Multi-Account AGY & 2D Matrix Gemini -->
+        <div id="aiTabAuth" class="ai-tab-pane">
+          <div class="apple-auth-card" style="padding: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 9px; background: rgba(255, 107, 0, 0.15); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                  🌐
+                </div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 700; color: #fff;">Thêm tài khoản Antigravity (AGY)</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Multi-Account OAuth &bull; Local Ingestion &bull; JSON Import</div>
+                </div>
+              </div>
+              <span id="agyAuthBadge" class="apple-auth-badge disconnected">⚪ Đang kiểm tra...</span>
+            </div>
+
+            <!-- Sub-tabs Segmented Control -->
+            <div class="agy-sub-seg">
+              <button type="button" class="agy-sub-btn active" id="subTabBtnOAuth" onclick="switchAgySubTab('oauth')">🌐 Ủy quyền OAuth</button>
+              <button type="button" class="agy-sub-btn" id="subTabBtnJson" onclick="switchAgySubTab('json')">🔑 Nhập JSON</button>
+              <button type="button" class="agy-sub-btn" id="subTabBtnLocal" onclick="switchAgySubTab('local')">🗄️ Nhập</button>
+            </div>
+
+            <!-- Sub-tab 1: Ủy quyền OAuth -->
+            <div id="agySubTabOAuth" class="agy-sub-pane">
+              <div class="agy-box">
+                <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 8px;">Tài khoản chờ xác thực</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                  <input type="email" id="agyPendingEmailInput" placeholder="Nhập email tài khoản Google / AGY" style="flex: 1; padding: 8px 12px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 12px;" />
+                  <button type="button" class="btn btn-sm" onclick="addPendingAgyEmail()">+ Thêm</button>
+                </div>
+                <div id="agyPendingEmailsList" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;"></div>
+                <button type="button" class="btn btn-sm" onclick="savePendingAgyEmails()" style="width: 100%; justify-content: center;">Lưu thẻ chờ xác thực</button>
+              </div>
+
+              <div class="agy-info-banner">
+                <span>🌐</span>
+                <span>Chúng tôi khuyên bạn nên hoàn tất kết nối Google OAuth trong trình duyệt của mình.</span>
+              </div>
+
+              <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button class="btn btn-primary" id="btnAgyStartOAuth" type="button" onclick="startAgyOAuth()" style="flex: 1; background: var(--accent-gradient); border: none; font-weight: 700; padding: 9px 14px; border-radius: 8px;">
+                  🌐 Bắt đầu xác thực OAuth
+                </button>
+                <button class="btn" id="btnAgyVerifyOAuth" type="button" onclick="verifyAgyOAuthStatus()" style="border-radius: 8px;">
+                  ✓ Tôi đã xác thực, tiếp tục
+                </button>
+              </div>
+
+              <div style="margin-bottom: 10px;">
+                <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Liên kết xác thực</label>
+                <div style="display: flex; gap: 6px;">
+                  <input type="text" id="agyAuthLinkInput" readonly placeholder="Nhấn 'Bắt đầu xác thực OAuth' để tạo liên kết..." style="flex: 1; padding: 8px 10px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-size: 11px; font-family: monospace;" />
+                  <button type="button" class="btn btn-sm" onclick="copyAgyAuthLink()" title="Sao chép">📋</button>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Nhập URL callback thủ công</label>
+                <div style="display: flex; gap: 6px;">
+                  <input type="text" id="agyManualCallbackInput" placeholder="Dán đầy đủ URL callback, ví dụ: http://localhost:.../oauth-callback?code=..." style="flex: 1; padding: 8px 10px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 11px; font-family: monospace;" />
+                  <button type="button" class="btn btn-sm btn-primary" id="btnAgyManualCallback" onclick="submitManualAgyCallback()">✓ Tôi đã xác thực, tiếp tục</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-tab 2: Nhập JSON -->
+            <div id="agySubTabJson" class="agy-sub-pane" style="display: none;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 6px;">Dán JSON Token / Danh sách tài khoản AGY</label>
+              <textarea id="agyImportJsonInput" rows="5" placeholder='{"access_token": "...", "refresh_token": "...", "email": "user@gmail.com"} hoặc mảng [{...}]' style="width: 100%; padding: 10px 12px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-family: monospace; resize: vertical; margin-bottom: 10px;"></textarea>
+              <button type="button" class="btn btn-primary" onclick="importAgyJson()" style="width: 100%; justify-content: center;">✓ Nhập &amp; Lưu Tài Khoản</button>
+            </div>
+
+            <!-- Sub-tab 3: Nhập Local -->
+            <div id="agySubTabLocal" class="agy-sub-pane" style="display: none;">
+              <div class="agy-box" style="margin-bottom: 0;">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+                  Tự động quét token đã đăng nhập sẵn từ Antigravity trên máy (<code style="color: #fff;">~/.gemini/jetski-standalone-oauth-token</code> &amp; <code style="color: #fff;">~/.gemini/antigravity-cli/antigravity-oauth-token</code>).
+                </p>
+                <button type="button" class="btn btn-primary" onclick="importAgyLocal()" style="width: 100%; justify-content: center;">
+                  📥 Quét &amp; Nhập từ Antigravity Local (~/.gemini)
+                </button>
+                <div id="agyLocalImportFeedback" style="font-size: 12px; color: #34d399; margin-top: 8px;"></div>
+              </div>
+            </div>
+
+            <!-- Danh sách tài khoản AGY đã kết nối -->
+            <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px;">
+              <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 8px;">Danh sách tài khoản AGY đã kết nối</div>
+              <div id="agyAccountsList"></div>
+            </div>
+          </div>
+
+          <!-- 2D Multi-Key x Multi-Model Gemini Matrix -->
+          <div style="margin-top: 14px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
+                🔑 Ma trận xoay Multi-Key × Multi-Model Gemini
+              </div>
+              <span id="aiMatrixSlotBadge" class="apple-auth-badge connected" style="font-size: 11px; padding: 3px 10px;">0 keys × 8 models = 0 slots</span>
+            </div>
+            <textarea id="aiApiKeysInput" rows="3" oninput="updateAiMatrixSlotBadge()" placeholder="Dán mỗi Gemini API Key một dòng (AIzaSy...)&#10;Khuyên dùng nhiều key từ các tài khoản Google khác nhau để nhân hạn mức RPD/RPM." style="width: 100%; padding: 10px 12px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-family: monospace; resize: vertical;"></textarea>
+            <div class="subtext" style="margin-top: 4px; margin-bottom: 10px;">Key đã lưu được che an toàn khi tải lại; dán key mới vào dòng mới để bổ sung.</div>
+
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Chọn các Flash Models tham gia xoay Round-Robin:</div>
+            <div id="aiModelsGrid" class="ai-models-grid"></div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Persona & Prompt -->
+        <div id="aiTabPersona" class="ai-tab-pane" style="display: none;">
+          <div class="form-group full">
+            <label style="font-size: 13px; font-weight: 700; margin-bottom: 6px; display: block;">
+              Lời nhắc chỉ đạo Persona cho AI (System Prompt)
+            </label>
+            <textarea id="aiPersonaInput" rows="4" style="width: 100%; padding: 12px 14px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 10px; color: var(--text-main); font-size: 13px; line-height: 1.5; resize: vertical;"></textarea>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">Gợi ý phong cách mẫu (Nhấn để áp dụng nhanh):</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <span class="apple-persona-chip" onclick="applyPersonaPreset('tech')">💻 Chuyên gia Công nghệ</span>
+              <span class="apple-persona-chip" onclick="applyPersonaPreset('friendly')">☕ Thân thiện &amp; Khen ngợi</span>
+              <span class="apple-persona-chip" onclick="applyPersonaPreset('question')">❓ Hỏi đáp sâu</span>
+              <span class="apple-persona-chip" onclick="applyPersonaPreset('casual')">🎉 Vui vẻ &amp; Bắt trend</span>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 16px;">
+            <div class="form-group">
+              <label>Ngôn ngữ ưu tiên</label>
+              <select id="aiLocaleSelect">
+                <option value="VN">Tiếng Việt (vi-VN)</option>
+                <option value="US">Tiếng Anh (en-US)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Độ dài bình luận tối đa</label>
+              <input type="number" id="aiMaxChars" value="120" min="40" max="300" />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: Scenarios & Settings -->
+        <div id="aiTabScenarios" class="ai-tab-pane" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border); cursor: pointer;">
+              <input type="checkbox" id="aiAutoLike" checked style="width: 18px; height: 18px;" />
+              <div>
+                <strong style="font-size: 13px; color: #fff;">Tự động thả cảm xúc (Reaction)</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">AI tự phân loại Thích (Like), Quan tâm (Care) hoặc Yêu thích (Love)</div>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border); cursor: pointer;">
+              <input type="checkbox" id="aiAutoComment" checked style="width: 18px; height: 18px;" />
+              <div>
+                <strong style="font-size: 13px; color: #fff;">Tự động viết bình luận (Contextual Comment)</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">Gõ bình luận mô phỏng tay người thật có độ trễ phím ngẫu nhiên</div>
+              </div>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border); cursor: pointer;">
+              <input type="checkbox" id="aiAutoJoin" checked style="width: 18px; height: 18px;" />
+              <div>
+                <strong style="font-size: 13px; color: #fff;">Tự động bấm "Tham gia nhóm" khi chưa là thành viên</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">Tìm nút Tham gia và click trước khi thực hiện tương tác</div>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-group full">
+            <label style="font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block;">Danh sách Nhóm mục tiêu (Mỗi link 1 dòng)</label>
+            <textarea id="aiTargetGroups" rows="3" style="width: 100%; padding: 10px 12px; background: var(--bg-surface-solid); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 12px; font-family: monospace; resize: vertical;" placeholder="https://www.facebook.com/groups/...
+https://www.facebook.com/groups/..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn" onclick="closeAiHubModal()">Hủy</button>
+        <button class="btn btn-primary" onclick="saveAiConfigFromUi()" style="background: var(--accent-gradient); border: none; font-weight: 700; padding: 9px 18px; border-radius: 8px;">
+          Lưu Thiết Lập AI
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

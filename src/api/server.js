@@ -20,6 +20,52 @@ const {
 } = require('../core/fingerprint-gen');
 const { checkProxyConnectivity } = require('../core/proxy-tunnel');
 const { probeRunningProfile } = require('../core/cdp-probe');
+const { AntigravityAuth } = require('../core/agy-auth');
+const { DEFAULT_FLASH_MODELS } = require('../../automation/ai/gemini');
+const agyAuth = new AntigravityAuth();
+
+function maskApiKey(k) {
+  if (!k || typeof k !== 'string') return '';
+  if (k.length >= 12) return k.slice(0, 6) + '••••••' + k.slice(-4);
+  return '••••••••';
+}
+
+function extractRawApiKeys(cfg) {
+  const candidates = [];
+  if (cfg && Array.isArray(cfg.apiKeys)) {
+    for (const k of cfg.apiKeys) candidates.push(k);
+  }
+  if (cfg && typeof cfg.apiKey === 'string' && cfg.apiKey) {
+    candidates.push(cfg.apiKey);
+  }
+  const seen = new Set();
+  const result = [];
+  for (const raw of candidates) {
+    const trimmed = typeof raw === 'string' ? raw.trim() : '';
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    result.push(trimmed);
+  }
+  return result;
+}
+
+function sanitizeAiConfigResponse(cfg) {
+  const rawKeys = extractRawApiKeys(cfg);
+  const maskedKeys = rawKeys.map(maskApiKey);
+  const models = (cfg && Array.isArray(cfg.models) && cfg.models.length > 0)
+    ? cfg.models
+    : DEFAULT_FLASH_MODELS;
+  const out = Object.assign({}, cfg, {
+    apiKey: maskedKeys[0] || '',
+    apiKeys: maskedKeys,
+    apiKeysMasked: maskedKeys,
+    apiKeyCount: rawKeys.length,
+    hasApiKey: rawKeys.length > 0,
+    models,
+    defaultModels: DEFAULT_FLASH_MODELS
+  });
+  return out;
+}
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -428,6 +474,205 @@ function createApiServer({ db, browserManager, uiDir }) {
           return sendJson(res, 400, { ok: false, error: err.message });
         }
       }
+
+      
+      // 7. AI Automation & Antigravity 2.0 Google OAuth Hub
+      if (req.method === 'GET' && pathname === '/api/v1/ai/status') {
+        const authStatus = await agyAuth.getAuthStatus();
+        const aiConfigPath = path.resolve(__dirname, '..', '..', 'data', 'ai_config.json');
+        let savedConfig = {
+          persona: 'Ban la nguoi dung mang xa hoi tu nhien, tich cuc, binh luan ngan gon sat noi dung.',
+          autoLike: true,
+          autoComment: true,
+          autoJoinGroup: true,
+          locale: 'VN',
+          maxChars: 120,
+          targetGroups: [],
+          apiKey: '',
+          apiKeys: [],
+          models: DEFAULT_FLASH_MODELS
+        };
+        if (fs.existsSync(aiConfigPath)) {
+          try { savedConfig = Object.assign({}, savedConfig, JSON.parse(fs.readFileSync(aiConfigPath, 'utf8'))); } catch (e) {}
+        }
+        return sendJson(res, 200, { ok: true, auth: authStatus, config: sanitizeAiConfigResponse(savedConfig) });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/oauth/login') {
+        try {
+          const body = await readJsonBody(req);
+          const flow = await agyAuth.startOAuthFlow({
+            openBrowser: body.openBrowser !== false,
+            pendingEmail: body.pendingEmail || ''
+          });
+          return sendJson(res, 200, { ok: true, url: flow.url, port: flow.port, state: flow.state });
+        } catch (err) {
+          return sendJson(res, 500, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/oauth/callback-manual') {
+        try {
+          const body = await readJsonBody(req);
+          const account = await agyAuth.completeManualCallback(body.callbackUrl);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, account, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/oauth/logout') {
+        agyAuth.clearToken();
+        return sendJson(res, 200, { ok: true, message: 'Đã ngắt kết nối Antigravity OAuth' });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/pending') {
+        try {
+          const body = await readJsonBody(req);
+          const pendingEmails = agyAuth.savePendingAccounts(body.pendingEmails || []);
+          return sendJson(res, 200, { ok: true, pendingEmails });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/import-json') {
+        try {
+          const body = await readJsonBody(req);
+          const result = await agyAuth.importJsonAccounts(body.jsonText ?? body.accounts ?? body);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, ...result, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/import-local') {
+        try {
+          const result = await agyAuth.importFromLocalAntigravity();
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, ...result, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/select') {
+        try {
+          const body = await readJsonBody(req);
+          agyAuth.setActiveAccount(body.id || body.email);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/delete') {
+        try {
+          const body = await readJsonBody(req);
+          agyAuth.removeAccount(body.id || body.email);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/config') {
+        const body = await readJsonBody(req);
+        const aiConfigPath = path.resolve(__dirname, '..', '..', 'data', 'ai_config.json');
+        let existingConfig = {};
+        if (fs.existsSync(aiConfigPath)) {
+          try {
+            existingConfig = JSON.parse(fs.readFileSync(aiConfigPath, 'utf8')) || {};
+          } catch (e) {}
+        }
+        const existingRawKeys = extractRawApiKeys(existingConfig);
+
+        let resolvedKeys = existingRawKeys;
+        if (Array.isArray(body.apiKeys)) {
+          const nextKeys = [];
+          const seen = new Set();
+          for (const rawItem of body.apiKeys) {
+            const item = typeof rawItem === 'string' ? rawItem.trim() : '';
+            if (!item) continue;
+            let resolved = item;
+            if (item.includes('••••••') || item === '••••••••') {
+              const matched = existingRawKeys.find((k) => maskApiKey(k) === item);
+              if (matched) {
+                resolved = matched;
+              } else if (item === '••••••••' && existingRawKeys.length > 0) {
+                resolved = existingRawKeys[0];
+              } else {
+                continue;
+              }
+            }
+            if (!seen.has(resolved)) {
+              seen.add(resolved);
+              nextKeys.push(resolved);
+            }
+          }
+          resolvedKeys = nextKeys;
+        } else if (typeof body.apiKey === 'string') {
+          const trimmedKey = body.apiKey.trim();
+          if (!trimmedKey) {
+            resolvedKeys = [];
+          } else if (trimmedKey.includes('••••••') || trimmedKey === '••••••••') {
+            const matched = existingRawKeys.find((k) => maskApiKey(k) === trimmedKey);
+            resolvedKeys = matched ? [matched] : existingRawKeys;
+          } else {
+            resolvedKeys = [trimmedKey];
+          }
+        }
+
+        const resolvedModels = (Array.isArray(body.models) && body.models.length > 0)
+          ? body.models.map((m) => String(m || '').trim()).filter(Boolean)
+          : (Array.isArray(existingConfig.models) && existingConfig.models.length > 0
+              ? existingConfig.models
+              : DEFAULT_FLASH_MODELS);
+
+        const nextConfig = Object.assign({}, existingConfig, body, {
+          apiKeys: resolvedKeys,
+          apiKey: resolvedKeys[0] || '',
+          models: resolvedModels.length > 0 ? resolvedModels : DEFAULT_FLASH_MODELS
+        });
+        delete nextConfig.apiKeysMasked;
+        delete nextConfig.apiKeyCount;
+        delete nextConfig.hasApiKey;
+        delete nextConfig.defaultModels;
+
+        fs.mkdirSync(path.dirname(aiConfigPath), { recursive: true });
+        fs.writeFileSync(aiConfigPath, JSON.stringify(nextConfig, null, 2), 'utf8');
+        return sendJson(res, 200, { ok: true, config: sanitizeAiConfigResponse(nextConfig) });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/run-profile') {
+        const body = await readJsonBody(req);
+        const profileId = body.profileId || body.id;
+        if (!profileId) return sendJson(res, 400, { ok: false, error: 'Missing profileId' });
+
+        const accountsPath = path.resolve(__dirname, '..', '..', 'automation', 'config', 'accounts_facebook.json');
+        let accounts = [];
+        if (fs.existsSync(accountsPath)) {
+          try { accounts = JSON.parse(fs.readFileSync(accountsPath, 'utf8')); } catch (e) {}
+        }
+        const acc = accounts.find(a => a.profileId === profileId) || accounts[0];
+        if (!acc) return sendJson(res, 400, { ok: false, error: 'Chưa có cấu hình tài khoản cho profile này' });
+
+        try {
+          const { FacebookRunner } = require('../../automation/scenarios/facebook_runner');
+          const runner = new FacebookRunner(Object.assign({}, acc, { profileId }));
+          runner.runSession({ headless: false, allowComment: body.allowComment !== false })
+            .catch(e => process.stderr.write('[AI Run Error]: ' + e.message + '\n'));
+
+          return sendJson(res, 200, { ok: true, message: `Đã kích hoạt AI trên Profile ${profileId}` });
+        } catch (err) {
+          return sendJson(res, 500, { ok: false, error: err.message });
+        }
+      }
+
 
       return sendJson(res, 404, { ok: false, error: `Route not found: ${req.method} ${pathname}` });
     } catch (err) {
