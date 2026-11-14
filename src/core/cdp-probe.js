@@ -5,6 +5,7 @@
  */
 
 const { fetchCdpJson } = require('./browser-manager');
+const { toCdpCookieParams } = require('./cookie-parser');
 
 const PROBE_EXPRESSION = `(() => {
   const getCanvasHash = () => {
@@ -165,7 +166,156 @@ async function probeRunningProfile(debuggingPort, timeoutMs = 6000) {
   });
 }
 
+/**
+ * Hot-injects normalized cookies into a running profile via CDP `Network.setCookies`.
+ *
+ * @param {number} debuggingPort
+ * @param {Object[]} cookies
+ * @param {number} [timeoutMs=6000]
+ * @returns {Promise<{ injectedCount: number }>}
+ */
+async function injectCookiesViaCdp(debuggingPort, cookies, timeoutMs = 6000) {
+  const cdpCookies = toCdpCookieParams(cookies);
+  if (cdpCookies.length === 0) {
+    return { injectedCount: 0 };
+  }
+
+  const targets = await fetchCdpJson(debuggingPort, '/json', 2000);
+  const pageTarget = Array.isArray(targets) ? targets.find((t) => t.type === 'page' && t.webSocketDebuggerUrl) : null;
+  if (!pageTarget) {
+    throw new Error(`No inspectable page target found on CDP port ${debuggingPort}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(pageTarget.webSocketDebuggerUrl);
+    let settled = false;
+
+    const cleanupAndReject = (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try { ws.close(); } catch {}
+      reject(err);
+    };
+
+    const timer = setTimeout(() => {
+      cleanupAndReject(new Error('CDP Network.setCookies timed out'));
+    }, timeoutMs);
+
+    ws.addEventListener('open', () => {
+      ws.send(JSON.stringify({
+        id: 1,
+        method: 'Network.setCookies',
+        params: { cookies: cdpCookies }
+      }));
+    });
+
+    ws.addEventListener('message', (event) => {
+      try {
+        const msg = JSON.parse(String(event.data));
+        if (msg.id === 1) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try { ws.close(); } catch {}
+          if (msg.error) {
+            reject(new Error(`CDP Network.setCookies failed: ${msg.error.message || JSON.stringify(msg.error)}`));
+          } else {
+            resolve({ injectedCount: cdpCookies.length });
+          }
+        }
+      } catch (err) {
+        cleanupAndReject(err);
+      }
+    });
+
+    ws.addEventListener('close', () => {
+      cleanupAndReject(new Error('CDP WebSocket closed before Network.setCookies finished'));
+    });
+
+    ws.addEventListener('error', (err) => {
+      cleanupAndReject(new Error(`CDP WebSocket error: ${err.message || 'connection failed'}`));
+    });
+  });
+}
+
+/**
+ * Opens a URL in a new tab of a running profile via CDP `Target.createTarget`.
+ *
+ * @param {number} debuggingPort
+ * @param {string} url
+ * @param {number} [timeoutMs=6000]
+ * @returns {Promise<Object>}
+ */
+async function openUrlViaCdp(debuggingPort, url, timeoutMs = 6000) {
+  const targets = await fetchCdpJson(debuggingPort, '/json', 2000);
+  const pageTarget = Array.isArray(targets)
+    ? (targets.find((t) => t.type === 'page' && t.webSocketDebuggerUrl) || targets.find((t) => t.webSocketDebuggerUrl))
+    : null;
+  if (!pageTarget) {
+    throw new Error(`No inspectable target found on CDP port ${debuggingPort}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(pageTarget.webSocketDebuggerUrl);
+    let settled = false;
+
+    const cleanupAndReject = (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try { ws.close(); } catch {}
+      reject(err);
+    };
+
+    const timer = setTimeout(() => {
+      cleanupAndReject(new Error('CDP Target.createTarget timed out'));
+    }, timeoutMs);
+
+    ws.addEventListener('open', () => {
+      try {
+        ws.send(JSON.stringify({
+          id: 1,
+          method: 'Target.createTarget',
+          params: { url }
+        }));
+      } catch (err) {
+        cleanupAndReject(err);
+      }
+    });
+
+    ws.addEventListener('message', (event) => {
+      try {
+        const msg = JSON.parse(String(event.data));
+        if (msg.id === 1) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try { ws.close(); } catch {}
+          if (msg.error) {
+            reject(new Error(`CDP Target.createTarget failed: ${msg.error.message || JSON.stringify(msg.error)}`));
+          } else {
+            resolve(msg.result || {});
+          }
+        }
+      } catch (err) {
+        cleanupAndReject(err);
+      }
+    });
+
+    ws.addEventListener('close', () => {
+      cleanupAndReject(new Error('CDP WebSocket closed before Target.createTarget finished'));
+    });
+
+    ws.addEventListener('error', (err) => {
+      cleanupAndReject(new Error(`CDP WebSocket error: ${err.message || 'connection failed'}`));
+    });
+  });
+}
+
 module.exports = {
   probeRunningProfile,
+  injectCookiesViaCdp,
+  openUrlViaCdp,
   PROBE_EXPRESSION
 };

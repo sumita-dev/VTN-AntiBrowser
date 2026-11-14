@@ -22,10 +22,39 @@ const {
   checkProxyConnectivity,
   serializeProxyConfig
 } = require('../core/proxy-tunnel');
-const { probeRunningProfile } = require('../core/cdp-probe');
+const { probeRunningProfile, injectCookiesViaCdp, openUrlViaCdp } = require('../core/cdp-probe');
+const { parseCookiesInput, mergeCookies } = require('../core/cookie-parser');
 const { AntigravityAuth } = require('../core/agy-auth');
 const { DEFAULT_FLASH_MODELS } = require('../../automation/ai/gemini');
 const agyAuth = new AntigravityAuth();
+
+function normalizeCookieDomainForMatch(domain) {
+  const d = String(domain || '').trim().toLowerCase().replace(/^\.+/, '');
+  if (d.startsWith('www.')) {
+    const stripped = d.slice(4);
+    if (stripped.includes('.')) return stripped;
+  }
+  return d;
+}
+
+function cookieMatchesDomain(cookieDomain, targetDomain) {
+  const d = normalizeCookieDomainForMatch(cookieDomain);
+  const target = normalizeCookieDomainForMatch(targetDomain);
+  if (!d || !target) return false;
+  if (target === 'facebook.com') {
+    return d === 'facebook.com' || d.endsWith('.facebook.com');
+  }
+  if (target === 'instagram.com') {
+    return d === 'instagram.com' || d.endsWith('.instagram.com');
+  }
+  if (target === 'x.com' || target === 'twitter.com') {
+    return d === 'x.com' || d.endsWith('.x.com') || d === 'twitter.com' || d.endsWith('.twitter.com');
+  }
+  if (target === 'tiktok.com') {
+    return d === 'tiktok.com' || d.endsWith('.tiktok.com');
+  }
+  return d === target;
+}
 
 function maskApiKey(k) {
   if (!k || typeof k !== 'string') return '';
@@ -322,10 +351,94 @@ function createApiServer({ db, browserManager, uiDir }) {
       if (req.method === 'POST' && pathname === '/api/v1/profiles') {
         const body = await readJsonBody(req);
         try {
+          if (typeof body.rawCookies === 'string' && body.rawCookies.trim()) {
+            body.cookies = parseCookiesInput(body.rawCookies, {
+              defaultDomain: body.cookieDomain || body.defaultDomain || ''
+            });
+          }
           const created = db.createProfile(body);
           return sendJson(res, 201, { ok: true, profile: created });
         } catch (err) {
           return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      const cookieRouteMatch = pathname.match(/^\/api\/v1\/profiles\/([^/]+)\/cookies$/);
+      if (cookieRouteMatch) {
+        const profileId = decodeURIComponent(cookieRouteMatch[1]);
+        const existing = db.getProfile(profileId);
+        if (!existing) return sendJson(res, 404, { ok: false, error: 'Profile not found' });
+
+        if (req.method === 'GET') {
+          return sendJson(res, 200, {
+            ok: true,
+            cookies: existing.cookies || [],
+            count: Array.isArray(existing.cookies) ? existing.cookies.length : 0
+          });
+        }
+
+        if (req.method === 'POST') {
+          const body = await readJsonBody(req);
+          try {
+            const input = body.rawCookies !== undefined ? body.rawCookies : body.cookies;
+            const parsed = parseCookiesInput(input, {
+              defaultDomain: body.defaultDomain || body.cookieDomain || ''
+            });
+            const mode = body.mode === 'merge' ? 'merge' : 'replace';
+            const finalCookies = mode === 'merge'
+              ? mergeCookies(existing.cookies || [], parsed)
+              : parsed;
+
+            const updated = db.updateProfile(profileId, { cookies: finalCookies });
+
+            let injectedLive = false;
+            if (browserManager.isRunning(profileId) && body.injectIfRunning !== false && parsed.length > 0) {
+              const sess = browserManager.getSession(profileId);
+              if (sess && sess.debuggingPort) {
+                await injectCookiesViaCdp(sess.debuggingPort, parsed);
+                injectedLive = true;
+              }
+            }
+
+            const domains = Array.from(new Set(finalCookies.map((c) => c.domain)));
+            return sendJson(res, 200, {
+              ok: true,
+              profile: updated,
+              importedCount: parsed.length,
+              totalCookies: finalCookies.length,
+              injectedLive,
+              domains
+            });
+          } catch (err) {
+            return sendJson(res, 400, { ok: false, error: err.message });
+          }
+        }
+
+        if (req.method === 'DELETE') {
+          let domainFilter = urlObj.searchParams.get('domain') || '';
+          if (!domainFilter) {
+            try {
+              const body = await readJsonBody(req);
+              if (body && typeof body.domain === 'string') {
+                domainFilter = body.domain;
+              }
+            } catch {}
+          }
+          const normalizedDomain = normalizeCookieDomainForMatch(domainFilter);
+          if (normalizedDomain) {
+            const currentCookies = Array.isArray(existing.cookies) ? existing.cookies : [];
+            const remainingCookies = currentCookies.filter((c) => !cookieMatchesDomain(c.domain, normalizedDomain));
+            const updated = db.updateProfile(profileId, { cookies: remainingCookies });
+            return sendJson(res, 200, {
+              ok: true,
+              profile: updated,
+              totalCookies: remainingCookies.length,
+              removedCount: currentCookies.length - remainingCookies.length,
+              domain: normalizedDomain
+            });
+          }
+          const updated = db.updateProfile(profileId, { cookies: [] });
+          return sendJson(res, 200, { ok: true, profile: updated, totalCookies: 0 });
         }
       }
 
@@ -367,6 +480,37 @@ function createApiServer({ db, browserManager, uiDir }) {
           proxyConfig: body.proxyConfig || body.proxy
         });
         return sendJson(res, 200, { ok: true, data: launchInfo });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/profile/open-url') {
+        const body = await readJsonBody(req);
+        const profileId = body.profileId || body.profile_id || body.id;
+        const targetUrl = typeof body.url === 'string' ? body.url.trim() : '';
+        if (!profileId) {
+          return sendJson(res, 400, { ok: false, error: 'Missing profileId' });
+        }
+        const profile = db.getProfile(profileId);
+        if (!profile) {
+          return sendJson(res, 404, { ok: false, error: 'Profile not found' });
+        }
+        let parsedTargetUrl;
+        try {
+          parsedTargetUrl = new URL(targetUrl);
+        } catch {
+          return sendJson(res, 400, { ok: false, error: 'Invalid url: must start with http:// or https://' });
+        }
+        if (parsedTargetUrl.protocol !== 'http:' && parsedTargetUrl.protocol !== 'https:') {
+          return sendJson(res, 400, { ok: false, error: 'Invalid url: must start with http:// or https://' });
+        }
+        if (browserManager.isRunning(profileId)) {
+          const sess = browserManager.getSession(profileId);
+          if (sess && sess.debuggingPort) {
+            await openUrlViaCdp(sess.debuggingPort, targetUrl);
+            return sendJson(res, 200, { ok: true, mode: 'cdp-tab', url: targetUrl });
+          }
+        }
+        const launchInfo = await browserManager.openProfile(profileId, { startUrl: targetUrl });
+        return sendJson(res, 200, { ok: true, mode: 'launch', url: targetUrl, data: launchInfo });
       }
 
       if (req.method === 'POST' && pathname === '/api/v1/profile/close') {

@@ -837,6 +837,21 @@
               <option value="0">Tắt (Giữ nguyên Timezone/IP đã cấu hình)</option>
             </select>
           </div>
+
+          <div class="form-group full">
+            <label>Import Cookies (Tùy chọn — JSON J2TEAM/Cookie-Editor, Netscape, hoặc chuỗi <code class="mono">c_user=...; xs=...;</code>)</label>
+            <div style="display: grid; grid-template-columns: 200px 1fr; gap: 8px; margin-bottom: 6px;">
+              <select id="fCookiePlatform">
+                <option value="">Tự động nhận diện Domain</option>
+                <option value=".facebook.com">Facebook (.facebook.com)</option>
+                <option value=".instagram.com">Instagram (.instagram.com)</option>
+                <option value=".x.com">X / Twitter (.x.com)</option>
+                <option value=".tiktok.com">TikTok (.tiktok.com)</option>
+              </select>
+              <div class="subtext" style="align-self: center;">Nạp trực tiếp qua nhân C++ (<code class="mono">--protected-cookiesfile</code>), không cần Extension.</div>
+            </div>
+            <textarea id="fCookies" rows="3" class="mono" style="width: 100%; resize: vertical; font-size: 12px;" placeholder='Dán JSON cookies hoặc chuỗi raw (vd: c_user=1000...; xs=...;)'></textarea>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -927,6 +942,60 @@
       <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
         <button class="btn" onclick="closeProxyModal()">Hủy</button>
         <button class="btn btn-primary" id="btnSaveProxy" onclick="saveProfileProxy()">Lưu Proxy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Cookies Modal -->
+  <div class="modal-backdrop" id="cookieModal">
+    <div class="modal" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3>🍪 Import Cookies — <span id="cookieModalTitle">Profile</span></h3>
+        <button class="btn btn-sm" onclick="closeCookieModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div id="cookieStatusBanner" class="subtext" style="padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border);"></div>
+        <div id="cookieAccountsList" style="display: none; flex-direction: column; gap: 8px;"></div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Nền tảng (cho chuỗi raw <code class="mono">key=value;</code>)</label>
+            <select id="cookieModalPlatform">
+              <option value="">Tự động nhận diện (FB / IG / X / TikTok)</option>
+              <option value=".facebook.com">Facebook (.facebook.com)</option>
+              <option value=".instagram.com">Instagram (.instagram.com)</option>
+              <option value=".x.com">X / Twitter (.x.com)</option>
+              <option value=".tiktok.com">TikTok (.tiktok.com)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Chế độ nhập</label>
+            <select id="cookieModalMode">
+              <option value="merge">Gộp thêm vào Cookies hiện có (Merge)</option>
+              <option value="replace">Ghi đè toàn bộ Cookies (Replace)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin: 0;">Dán Cookies (JSON J2TEAM / Cookie-Editor / Netscape / Raw string)</label>
+            <label class="btn btn-sm" style="cursor: pointer; margin: 0;">
+              📂 Chọn file .json / .txt
+              <input type="file" id="cookieFileInput" accept=".json,.txt,.cookies" style="display: none;" onchange="onCookieFileSelected(event)" />
+            </label>
+          </div>
+          <textarea id="cookieModalInput" rows="8" class="mono" style="width: 100%; resize: vertical; font-size: 12px;" placeholder='Hỗ trợ:&#10;1. JSON từ J2TEAM Cookies / Cookie-Editor / EditThisCookie&#10;2. Chuỗi raw: c_user=1000...; xs=32%3A...; datr=...;&#10;3. File Netscape HTTP Cookie (.txt)'></textarea>
+        </div>
+
+        <div id="cookieModalFeedback" class="subtext"></div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <button class="btn btn-danger btn-sm" onclick="clearProfileCookies()">🗑 Xóa toàn bộ Cookies</button>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn" onclick="closeCookieModal()">Hủy</button>
+          <button class="btn btn-primary" id="btnSaveCookies" onclick="saveProfileCookies()">Lưu &amp; Nạp Cookies</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1176,6 +1245,22 @@
       });
     }
 
+    function formatCookieBadge(cookies, running = false) {
+      const label = running ? '🍪 Cookies' : '🍪';
+      if (!Array.isArray(cookies) || cookies.length === 0) {
+        return {
+          label,
+          title: running ? 'Nạp nóng Cookies qua CDP' : 'Import / Quản lý Cookies'
+        };
+      }
+      const normalizeDomain = (d) => String(d || '').trim().toLowerCase().replace(/^\.+/, '').replace(/^www\./, '');
+      const uniqueDomains = Array.from(new Set(cookies.map(c => normalizeDomain(c.domain)).filter(Boolean)));
+      const title = uniqueDomains.length > 0
+        ? `Đã nạp Cookies: ${uniqueDomains.join(', ')} (${cookies.length} khóa)`
+        : `Đã nạp Cookies (${cookies.length} khóa)`;
+      return { label, title };
+    }
+
     async function init() {
       const bpRes = await fetch('/api/v1/blueprints').then(r => r.json());
       if (bpRes.ok) {
@@ -1297,6 +1382,8 @@
           proxyColumnContent = `<div class="mono cell-ellipsis" style="max-width: 200px;" title="${escapeHtml(proxyStr)}">${escapeHtml(proxyStr)}</div><div class="subtext cell-ellipsis" style="max-width: 200px;" title="${escapeHtml(tzLine)}">${escapeHtml(tzLine)}</div>`;
         }
 
+        const cookieBadge = formatCookieBadge(p.cookies, p.running);
+
         return `
           <tr>
             <td>
@@ -1337,11 +1424,13 @@
               ${p.running
                 ? (p.activeSession?.closing
                     ? `<button class="btn btn-sm" disabled style="opacity: 0.6; cursor: not-allowed;">⏳ Đang đóng...</button>`
-                    : `<button class="btn btn-sm" onclick="probeProfile('${escapeJs(p.id)}')">🔍 Kiểm tra Vân tay</button>
+                    : `<button class="btn btn-sm" onclick="openCookieModal('${escapeJs(p.id)}')" title="${escapeHtml(cookieBadge.title)}">${escapeHtml(cookieBadge.label)}</button>
+                       <button class="btn btn-sm" onclick="probeProfile('${escapeJs(p.id)}')">🔍 Kiểm tra Vân tay</button>
                        <button class="btn btn-sm btn-danger" onclick="closeProfile('${escapeJs(p.id)}')">■ Đóng</button>`)
                 : (openingProfiles.has(String(p.id))
                     ? `<button class="btn btn-sm" disabled style="opacity: 0.6; cursor: not-allowed;">⏳ Đang mở...</button>`
                     : `<button class="btn btn-sm btn-success" onclick="openProfile('${escapeJs(p.id)}', this)">▶ Mở Trình Duyệt</button>
+                   <button class="btn btn-sm" onclick="openCookieModal('${escapeJs(p.id)}')" title="${escapeHtml(cookieBadge.title)}">${escapeHtml(cookieBadge.label)}</button>
                    <button class="btn btn-sm" onclick="openProxyModal('${escapeJs(p.id)}')" title="Gán hoặc sửa Proxy cho Profile">🌐 Proxy</button>
                    <button class="btn btn-sm" onclick="uploadProfileToCloud('${escapeJs(p.id)}')" title="Đẩy profile lên Cloudflare R2">☁️ Đẩy</button>
                    <button class="btn btn-sm btn-danger" onclick="deleteProfile('${escapeJs(p.id)}')" title="Xóa Profile">🗑</button>`)
@@ -1362,6 +1451,8 @@
       document.getElementById('fProxy').value = '';
       document.getElementById('proxyCheckResult').textContent = '';
       document.getElementById('fAutoGeo').value = '1';
+      document.getElementById('fCookiePlatform').value = '';
+      document.getElementById('fCookies').value = '';
       const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (localTz) ensureTimezoneOption(document.getElementById('fTimezone'), localTz);
       await regeneratePreviewFp(true);
@@ -1477,13 +1568,17 @@
       };
 
       const rawProxy = document.getElementById('fProxy').value.trim();
+      const rawCookies = document.getElementById('fCookies').value.trim();
+      const cookieDomain = document.getElementById('fCookiePlatform').value;
       const payload = {
         name: document.getElementById('fName').value.trim() || 'New Profile',
         groupName: document.getElementById('fGroup').value.trim() || 'Default',
         startUrl: overrides.newTabUrl,
         autoGeoIp: document.getElementById('fAutoGeo').value === '1',
         proxyConfig: rawProxy ? rawProxy : { mode: 'direct' },
-        fingerprintOverrides: overrides
+        fingerprintOverrides: overrides,
+        rawCookies: rawCookies || undefined,
+        cookieDomain: cookieDomain || undefined
       };
 
       const res = await fetch('/api/v1/profiles', {
@@ -2065,6 +2160,237 @@
         btn.disabled = false;
         btn.textContent = 'Lưu Proxy';
       }
+    }
+
+    let activeCookieProfileId = null;
+
+    function groupCookiesByAccount(cookies) {
+      if (!Array.isArray(cookies) || cookies.length === 0) return [];
+      const groups = new Map();
+      const normalizeDomain = (d) => String(d || '').trim().toLowerCase().replace(/^\.+/, '').replace(/^www\./, '');
+
+      for (const c of cookies) {
+        const d = normalizeDomain(c.domain);
+        if (!d) continue;
+        let meta;
+        if (d === 'facebook.com' || d.endsWith('.facebook.com')) {
+          meta = { key: 'facebook.com', name: 'Facebook', icon: '📘', url: 'https://www.facebook.com', idCookie: 'c_user' };
+        } else if (d === 'instagram.com' || d.endsWith('.instagram.com')) {
+          meta = { key: 'instagram.com', name: 'Instagram', icon: '📸', url: 'https://www.instagram.com', idCookie: 'ds_user_id' };
+        } else if (d === 'x.com' || d.endsWith('.x.com') || d === 'twitter.com' || d.endsWith('.twitter.com')) {
+          meta = { key: 'x.com', name: 'X (Twitter)', icon: '𝕏', url: 'https://x.com', idCookie: 'twid' };
+        } else if (d === 'tiktok.com' || d.endsWith('.tiktok.com')) {
+          meta = { key: 'tiktok.com', name: 'TikTok', icon: '🎵', url: 'https://www.tiktok.com', idCookie: 'uid_tt' };
+        } else {
+          meta = { key: d, name: d, icon: '🌐', url: 'https://' + d, idCookie: '' };
+        }
+
+        if (!groups.has(meta.key)) {
+          groups.set(meta.key, {
+            key: meta.key,
+            name: meta.name,
+            icon: meta.icon,
+            url: meta.url,
+            accountId: '',
+            count: 0
+          });
+        }
+        const entry = groups.get(meta.key);
+        entry.count += 1;
+        if (meta.idCookie && c.name === meta.idCookie && c.value) {
+          let val = String(c.value);
+          if (meta.key === 'x.com') {
+            try { val = decodeURIComponent(val); } catch {}
+            val = val.replace(/^u=/, '');
+          }
+          entry.accountId = val;
+        }
+      }
+      return Array.from(groups.values());
+    }
+
+    function renderCookieAccountsList(profile) {
+      const container = document.getElementById('cookieAccountsList');
+      if (!container) return;
+      if (!container.dataset.listenerAttached) {
+        container.dataset.listenerAttached = '1';
+        container.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-action]');
+          if (!btn) return;
+          const action = btn.dataset.action;
+          const pid = btn.dataset.profileId;
+          if (action === 'open-url') {
+            openProfilePlatformUrl(pid, btn.dataset.url);
+          } else if (action === 'remove-cookies') {
+            removePlatformCookies(pid, btn.dataset.domain);
+          }
+        });
+      }
+      const groups = groupCookiesByAccount(profile && profile.cookies);
+      if (groups.length === 0) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'flex';
+      container.innerHTML = groups.map(g => {
+        const idBadge = g.accountId
+          ? `<span class="mono" style="color: var(--text-muted); font-size: 12px; margin-left: 6px;">${escapeHtml(g.accountId)}</span>`
+          : '';
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap;">
+              <span>${escapeHtml(g.icon)}</span>
+              <span style="font-weight: 600; font-size: 13px;">${escapeHtml(g.name)}</span>
+              ${idBadge}
+              <span class="subtext">(${g.count} khóa)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              <button class="btn btn-sm btn-success" data-action="open-url" data-profile-id="${escapeHtml(activeCookieProfileId)}" data-url="${escapeHtml(g.url)}">🚀 Mở ${escapeHtml(g.name)}</button>
+              <button class="btn btn-sm btn-danger" data-action="remove-cookies" data-profile-id="${escapeHtml(activeCookieProfileId)}" data-domain="${escapeHtml(g.key)}" title="Xóa cookies ${escapeHtml(g.name)}">🗑</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function openProfilePlatformUrl(profileId, url) {
+      if (!profileId || !url) return;
+      try {
+        const res = await fetch('/api/v1/profile/open-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId, url })
+        }).then(r => r.json());
+        if (!res.ok) {
+          alert('Lỗi mở URL: ' + (res.error || 'Unknown'));
+          return;
+        }
+        closeCookieModal();
+        await loadProfiles();
+        showToast(res.mode === 'cdp-tab' ? `🚀 Đã mở tab mới: ${url}` : `🚀 Đã khởi chạy trình duyệt tới ${url}`);
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      }
+    }
+
+    async function removePlatformCookies(profileId, domainKey) {
+      if (!profileId || !domainKey) return;
+      try {
+        const res = await fetch(`/api/v1/profiles/${encodeURIComponent(profileId)}/cookies?domain=${encodeURIComponent(domainKey)}`, {
+          method: 'DELETE'
+        }).then(r => r.json());
+        if (!res.ok) {
+          alert('Lỗi xóa cookies: ' + (res.error || 'Unknown'));
+          return;
+        }
+        showToast(`✓ Đã xóa cookies ${domainKey}`);
+        await loadProfiles();
+        openCookieModal(profileId);
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      }
+    }
+
+    function openCookieModal(id) {
+      const p = allProfiles.find(item => String(item.id) === String(id));
+      if (!p) return;
+      activeCookieProfileId = p.id;
+      document.getElementById('cookieModalTitle').textContent = p.name || p.id;
+      const count = Array.isArray(p.cookies) ? p.cookies.length : 0;
+      const domains = Array.isArray(p.cookies) ? Array.from(new Set(p.cookies.map(c => c.domain).filter(Boolean))) : [];
+      const banner = document.getElementById('cookieStatusBanner');
+      if (p.running) {
+        banner.innerHTML = `<span style="color: #4ade80;">● Profile đang chạy</span> — Cookies mới sẽ được <b>nạp nóng qua CDP</b> ngay lập tức. Hiện có <b>${count}</b> cookies${domains.length ? ` (${escapeHtml(domains.slice(0, 4).join(', '))}${domains.length > 4 ? '...' : ''})` : ''}.`;
+      } else {
+        banner.innerHTML = `<span>○ Profile đang đóng</span> — Cookies sẽ được lưu và tự động nạp qua <code class="mono">--protected-cookiesfile</code> khi mở trình duyệt. Hiện có <b>${count}</b> cookies${domains.length ? ` (${escapeHtml(domains.slice(0, 4).join(', '))}${domains.length > 4 ? '...' : ''})` : ''}.`;
+      }
+      renderCookieAccountsList(p);
+      document.getElementById('cookieModalPlatform').value = '';
+      document.getElementById('cookieModalMode').value = 'merge';
+      document.getElementById('cookieModalInput').value = '';
+      document.getElementById('cookieFileInput').value = '';
+      document.getElementById('cookieModalFeedback').textContent = '';
+      document.getElementById('cookieModal').classList.add('active');
+    }
+
+    function closeCookieModal() {
+      activeCookieProfileId = null;
+      document.getElementById('cookieModal').classList.remove('active');
+    }
+
+    function onCookieFileSelected(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('cookieModalInput').value = String(reader.result || '');
+      };
+      reader.readAsText(file, 'utf8');
+      event.target.value = '';
+    }
+
+    async function saveProfileCookies() {
+      if (!activeCookieProfileId) return;
+      const rawCookies = document.getElementById('cookieModalInput').value.trim();
+      const feedback = document.getElementById('cookieModalFeedback');
+      if (!rawCookies) {
+        feedback.style.color = '#f87171';
+        feedback.textContent = 'Vui lòng dán nội dung cookies hoặc chọn file trước khi lưu.';
+        return;
+      }
+
+      const btn = document.getElementById('btnSaveCookies');
+      btn.disabled = true;
+      btn.textContent = 'Đang nạp...';
+      feedback.style.color = 'var(--text-muted)';
+      feedback.textContent = 'Đang phân tích & nạp cookies...';
+
+      try {
+        const res = await fetch(`/api/v1/profiles/${encodeURIComponent(activeCookieProfileId)}/cookies`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rawCookies,
+            defaultDomain: document.getElementById('cookieModalPlatform').value,
+            mode: document.getElementById('cookieModalMode').value,
+            injectIfRunning: true
+          })
+        }).then(r => r.json());
+
+        if (!res.ok) {
+          feedback.style.color = '#f87171';
+          feedback.textContent = '✕ Lỗi: ' + (res.error || 'Không thể phân tích cookies');
+          return;
+        }
+
+        feedback.style.color = '#4ade80';
+        feedback.textContent = `✓ Đã nhập ${res.importedCount} cookies (Tổng: ${res.totalCookies})${res.injectedLive ? ' — Đã nạp nóng vào trình duyệt đang chạy!' : ''}`;
+        showToast(`✓ Đã nạp ${res.importedCount} cookies`);
+        await loadProfiles();
+        setTimeout(() => closeCookieModal(), 900);
+      } catch (err) {
+        feedback.style.color = '#f87171';
+        feedback.textContent = '✕ Lỗi kết nối: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Lưu & Nạp Cookies';
+      }
+    }
+
+    async function clearProfileCookies() {
+      if (!activeCookieProfileId) return;
+      if (!confirm('Xóa toàn bộ cookies đã lưu trong profile này?')) return;
+      const res = await fetch(`/api/v1/profiles/${encodeURIComponent(activeCookieProfileId)}/cookies`, {
+        method: 'DELETE'
+      }).then(r => r.json());
+      if (!res.ok) {
+        alert('Lỗi xóa cookies: ' + (res.error || 'Unknown'));
+        return;
+      }
+      showToast('✓ Đã xóa cookies của profile');
+      await loadProfiles();
+      openCookieModal(activeCookieProfileId);
     }
 
     function openRenameModal(id, currentName) {
