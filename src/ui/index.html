@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" translate="no">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="google" content="notranslate" />
   <title>VTN Anti-Browser — Native Chromium 151 Antidetect</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="alternate icon" href="/favicon.ico" />
@@ -48,10 +49,11 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border-subtle);
-      padding: 14px 28px;
+      padding: 11px 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 16px;
       position: sticky;
       top: 0;
       z-index: 40;
@@ -59,29 +61,36 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       user-select: none;
+      min-width: 0;
+      flex-shrink: 1;
     }
     .brand-logo-container {
-      width: 52px;
-      height: 52px;
+      width: 44px;
+      height: 44px;
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      filter: drop-shadow(0 8px 18px var(--accent-glow));
+      filter: drop-shadow(0 6px 14px var(--accent-glow));
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .brand-logo-container svg {
+      width: 44px;
+      height: 44px;
     }
     .brand:hover .brand-logo-container {
       transform: scale(1.05);
     }
     .brand-title h1 {
-      font-size: 21px;
+      font-size: 19px;
       font-weight: 700;
       letter-spacing: -0.4px;
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
+      white-space: nowrap;
     }
     .btn-edit-name {
       background: rgba(255, 255, 255, 0.06);
@@ -114,15 +123,31 @@
       -webkit-text-fill-color: transparent;
     }
     .brand-title p {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-muted);
       letter-spacing: 0.1px;
+      white-space: nowrap;
     }
 
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+    }
+    .header-actions .btn,
+    .header-actions .btn-ai-hub {
+      padding: 7px 12px;
+      font-size: 12.5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .header-actions .status-pill {
+      padding: 6px 11px;
+      font-size: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .toast-banner {
       position: fixed;
@@ -198,7 +223,7 @@
     .btn-success:hover { background: rgba(16, 185, 129, 0.35); }
     .btn-danger { background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
     .btn-danger:hover { background: rgba(239, 68, 68, 0.32); }
-    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; white-space: nowrap; }
 
     input:focus, select:focus, textarea:focus {
       outline: none;
@@ -208,8 +233,8 @@
 
     /* Main Content */
     main {
-      padding: 24px;
-      max-width: 1440px;
+      padding: 16px 24px 24px;
+      max-width: none;
       width: 100%;
       margin: 0 auto;
       flex: 1;
@@ -219,33 +244,38 @@
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
+      gap: 12px;
+      margin-bottom: 14px;
     }
     .stat-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px 20px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
-    .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
-    .stat-value { font-size: 24px; font-weight: 700; }
+    .stat-label { font-size: 12.5px; color: var(--text-muted); font-weight: 500; }
+    .stat-value { font-size: 22px; font-weight: 700; line-height: 1; }
 
     /* Toolbar */
     .toolbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       gap: 12px;
     }
     .search-input {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       color: var(--text-main);
-      padding: 9px 14px;
+      padding: 8px 13px;
       border-radius: 8px;
-      width: 320px;
+      width: 360px;
+      max-width: 100%;
       font-size: 13px;
     }
 
@@ -266,11 +296,13 @@
       background: rgba(31, 41, 55, 0.6);
       color: var(--text-muted);
       font-weight: 600;
-      padding: 12px 16px;
+      font-size: 12px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--border);
+      white-space: nowrap;
     }
     td {
-      padding: 13px 16px;
+      padding: 10px 12px;
       border-bottom: 1px solid rgba(51, 65, 85, 0.5);
       vertical-align: middle;
     }
@@ -278,13 +310,16 @@
     tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
     .badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       padding: 3px 8px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 600;
       background: var(--bg-card);
       border: 1px solid var(--border);
+      white-space: nowrap;
     }
     .badge-win { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); }
     .badge-mac { color: #c084fc; border-color: rgba(192, 132, 252, 0.3); }
@@ -294,6 +329,34 @@
 
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
     .subtext { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .cell-ellipsis {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .action-group {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+
+    @media (max-width: 1280px) {
+      header {
+        flex-wrap: wrap;
+        padding: 10px 16px;
+        gap: 10px;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+      main {
+        padding: 14px 16px;
+      }
+    }
 
     /* Modal */
     .modal-backdrop {
@@ -673,17 +736,16 @@
       <table>
         <thead>
           <tr>
-            <th style="min-width: 220px; width: 24%;">Tên Profile</th>
-            <th>Hệ điều hành &amp; Phần cứng</th>
-            <th style="max-width: 160px; width: 14%;">WebGL Renderer (C++ Hook)</th>
-            <th>Vân tay Noise (Canvas / Audio / Rects)</th>
+            <th style="min-width: 160px;">Tên Profile</th>
+            <th>OS &amp; Phần cứng</th>
+            <th>Vân tay Noise</th>
             <th>Proxy &amp; Timezone</th>
-            <th>Trạng thái / CDP</th>
+            <th>Trạng thái</th>
             <th style="text-align: right;">Thao tác</th>
           </tr>
         </thead>
         <tbody id="profileTableBody">
-          <tr><td colspan="7" style="text-align: center; padding: 32px; color: var(--text-muted);">Đang tải danh sách Profile...</td></tr>
+          <tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);">Đang tải danh sách Profile...</td></tr>
         </tbody>
       </table>
     </div>
@@ -771,8 +833,8 @@
           <div class="form-group">
             <label>Tự động đồng bộ GeoIP khi mở</label>
             <select id="fAutoGeo">
+              <option value="1" selected>Bật (Tự động lấy IP, Timezone, Tọa độ theo Proxy/Mạng)</option>
               <option value="0">Tắt (Giữ nguyên Timezone/IP đã cấu hình)</option>
-              <option value="1">Bật (Tự động lấy IP, Timezone, Tọa độ theo Proxy)</option>
             </select>
           </div>
         </div>
@@ -817,6 +879,54 @@
       <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
         <button class="btn" onclick="closeRenameModal()">Hủy</button>
         <button class="btn btn-primary" id="btnSaveRename" onclick="saveProfileName()">Lưu Thay Đổi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit / Assign Proxy Modal -->
+  <div class="modal-backdrop" id="proxyModal">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3>🌐 Gán / Cấu Hình Proxy Cho Profile</h3>
+        <button class="btn btn-sm" onclick="closeProxyModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <input type="hidden" id="editProxyProfileId" />
+        <div class="subtext" id="editProxyProfileName" style="font-size: 13px; color: var(--text-main); font-weight: 600;"></div>
+
+        <div class="form-grid" style="grid-template-columns: 150px 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Giao thức</label>
+            <select id="editProxyType" onchange="onEditProxyTypeChange()">
+              <option value="auto">Tự nhận diện</option>
+              <option value="http">HTTP</option>
+              <option value="https">HTTPS</option>
+              <option value="socks5">SOCKS5</option>
+              <option value="direct">Direct (Không Proxy)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Chuỗi Proxy (<code class="mono">ip:port:user:pass</code> hoặc <code class="mono">type://user:pass@ip:port</code>)</label>
+            <input type="text" id="editProxyInput" placeholder="Để trống nếu dùng mạng trực tiếp (Direct)" />
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn" type="button" id="btnTestEditProxy" onclick="testEditProxy()">⚡ Kiểm tra Proxy &amp; Lấy GeoIP</button>
+          <span class="subtext" id="editProxyCheckResult" style="flex: 1;"></span>
+        </div>
+
+        <div class="form-group full">
+          <label>Tự động đồng bộ GeoIP (IP, Timezone, Ngôn ngữ, Tọa độ) khi mở Chrome</label>
+          <select id="editProxyAutoGeo">
+            <option value="1">Bật (Tự động lấy IP, Timezone theo Proxy / Mạng thực tế)</option>
+            <option value="0">Tắt (Giữ nguyên Timezone hiện tại của Profile)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn" onclick="closeProxyModal()">Hủy</button>
+        <button class="btn btn-primary" id="btnSaveProxy" onclick="saveProfileProxy()">Lưu Proxy</button>
       </div>
     </div>
   </div>
@@ -919,6 +1029,7 @@
 
   <script>
     let allProfiles = [];
+    const openingProfiles = new Set();
     let blueprints = [];
     let currentGeneratedFp = null;
     let toastTimer = null;
@@ -1122,6 +1233,33 @@
       }
     }
 
+    function formatProxyDisplay(proxyConfig) {
+      if (!proxyConfig) return 'Direct';
+      if (typeof proxyConfig === 'object') {
+        if (proxyConfig.mode === 'direct' || proxyConfig.type === 'direct' || !proxyConfig.host) {
+          return 'Direct';
+        }
+        const proto = (proxyConfig.type || 'http').toUpperCase();
+        const lock = proxyConfig.username ? ' 🔒' : '';
+        return `${proto} • ${proxyConfig.host}:${proxyConfig.port}${lock}`;
+      }
+      const raw = String(proxyConfig).trim();
+      if (!raw || raw.toLowerCase() === 'direct') return 'Direct';
+      return raw.replace(/\/\/[^:@]+:[^@]+@/, '//***@');
+    }
+
+    function ensureTimezoneOption(selectEl, tz) {
+      if (!selectEl || !tz) return;
+      const exists = Array.from(selectEl.options).some(o => o.value === tz);
+      if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = tz;
+        opt.textContent = tz;
+        selectEl.appendChild(opt);
+      }
+      selectEl.value = tz;
+    }
+
     function renderTable() {
       const q = (document.getElementById('searchInput').value || '').toLowerCase();
       const tbody = document.getElementById('profileTableBody');
@@ -1131,81 +1269,101 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 36px; color: var(--text-muted);">Chưa có Profile nào. Nhấn <b>+ Tạo Profile Mới</b> để khởi tạo.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 36px; color: var(--text-muted);">Chưa có Profile nào. Nhấn <b>+ Tạo Profile Mới</b> để khởi tạo.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = filtered.map(p => {
         const fp = p.fingerprint || {};
         const sw = fp.switches || {};
-        const wgl = fp.webglFp || {};
         const isMac = sw.Platform === 'MacIntel';
-        const proxyStr = p.proxyConfig && p.proxyConfig.host
-          ? `${p.proxyConfig.type}://${p.proxyConfig.host}:${p.proxyConfig.port}`
-          : 'Direct';
+        const hasOpened = Boolean(p.lastOpenedAt || p.running);
+        const hasProxy = Boolean(p.proxyConfig && (p.proxyConfig.mode === 'proxy' || p.proxyConfig.host));
+        const proxyStr = formatProxyDisplay(p.proxyConfig);
+        const realIp = (p.activeSession && p.activeSession.geoInfo && p.activeSession.geoInfo.ip)
+          || (fp.dynamicConfig && fp.dynamicConfig.PublicIP)
+          || '';
+        const tzDisplay = (p.activeSession && p.activeSession.geoInfo && p.activeSession.geoInfo.timeZone)
+          || sw.TimeZone
+          || 'Chưa đồng bộ';
+        const tzLine = realIp ? `${tzDisplay} • ${realIp}` : tzDisplay;
+
+        let proxyColumnContent = '';
+        if (!hasOpened && !hasProxy && !realIp) {
+          proxyColumnContent = '<span class="subtext">—</span>';
+        } else if (hasProxy && !hasOpened && !realIp) {
+          proxyColumnContent = `<div class="mono cell-ellipsis" style="max-width: 200px;" title="${escapeHtml(proxyStr)}">${escapeHtml(proxyStr)}</div>`;
+        } else {
+          proxyColumnContent = `<div class="mono cell-ellipsis" style="max-width: 200px;" title="${escapeHtml(proxyStr)}">${escapeHtml(proxyStr)}</div><div class="subtext cell-ellipsis" style="max-width: 200px;" title="${escapeHtml(tzLine)}">${escapeHtml(tzLine)}</div>`;
+        }
 
         return `
           <tr>
             <td>
               <div class="profile-name-row" style="display: flex; align-items: center; gap: 8px;">
-                <span id="name-display-${p.id}" style="font-weight: 700; font-size: 14px; word-break: break-word;">${escapeHtml(p.name)}</span>
-                <button class="btn-edit-name" onclick="openRenameModal('${p.id}', '${escapeJs(p.name)}')" title="Đổi tên Profile">
+                <span id="name-display-${escapeHtml(p.id)}" style="font-weight: 700; font-size: 13.5px; word-break: break-word;">${escapeHtml(p.name)}</span>
+                <button class="btn-edit-name" onclick="openRenameModal('${escapeJs(p.id)}', '${escapeJs(p.name)}')" title="Đổi tên Profile">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                   </svg>
                 </button>
               </div>
-              <div class="subtext mono">${p.id} • ${escapeHtml(p.groupName)}</div>
+              <div class="subtext mono" style="white-space: nowrap;">${escapeHtml(p.id)} • ${escapeHtml(p.groupName)}</div>
             </td>
             <td>
               <span class="badge ${isMac ? 'badge-mac' : 'badge-win'}">${sw.Platform || 'Win32'}</span>
-              <div class="subtext">${sw.HardwareConcurrency || 8} Cores • ${sw.DeviceMemory || 16}GB RAM • ${sw.ScreenSize || '1920,1080'}</div>
+              <div class="subtext" style="white-space: nowrap;">${sw.HardwareConcurrency || 8} Cores • ${sw.DeviceMemory || 16}GB RAM • ${sw.ScreenSize || '1920,1080'}</div>
             </td>
-            <td>
-              <div style="max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(wgl.UNMASKED_RENDERER_WEBGL || '')}">
-                ${escapeHtml(wgl.UNMASKED_RENDERER_WEBGL || 'Default')}
-              </div>
-              <div class="subtext">${escapeHtml(wgl.UNMASKED_VENDOR_WEBGL || '')}</div>
-            </td>
-            <td class="mono">
+            <td class="mono" style="white-space: nowrap;">
               <div>Canvas: #${sw.CanvasMark || '0'}</div>
               <div class="subtext">WGL:${sw.WebGLMark || '-'} | Aud:${sw.AudioFP || '-'} | Rect:${sw.ClientRectFP || '-'}</div>
             </td>
             <td>
-              <div class="mono">${escapeHtml(proxyStr)}</div>
-              <div class="subtext">${escapeHtml(sw.TimeZone || 'America/New_York')}</div>
+              ${proxyColumnContent}
             </td>
             <td>
               ${p.running
                 ? (p.activeSession?.closing
                     ? `<span class="badge badge-closing">⏳ Đang đóng...</span>
-                       <div class="subtext mono">PID: ${p.activeSession?.pid || '-'}</div>`
+                       <div class="subtext mono" style="white-space: nowrap;">PID: ${p.activeSession?.pid || '-'}</div>`
                     : `<span class="badge badge-running">● Đang chạy (Port ${p.activeSession?.debuggingPort})</span>
-                       <div class="subtext mono">PID: ${p.activeSession?.pid}</div>`)
+                       <div class="subtext mono" style="white-space: nowrap;">PID: ${p.activeSession?.pid}</div>`)
                 : `<span class="badge badge-stopped">○ Đã đóng</span>`
               }
             </td>
             <td style="text-align: right; white-space: nowrap;">
+              <div class="action-group">
               ${p.running
                 ? (p.activeSession?.closing
                     ? `<button class="btn btn-sm" disabled style="opacity: 0.6; cursor: not-allowed;">⏳ Đang đóng...</button>`
-                    : `<button class="btn btn-sm" onclick="probeProfile('${p.id}')">🔍 Kiểm tra Vân tay</button>
-                       <button class="btn btn-sm btn-danger" onclick="closeProfile('${p.id}')">■ Đóng</button>`)
-                : `<button class="btn btn-sm btn-success" onclick="openProfile('${p.id}')">▶ Mở Trình Duyệt</button>
-                   <button class="btn btn-sm" onclick="uploadProfileToCloud('${p.id}')" title="Đẩy profile lên Cloudflare R2">☁️ Đẩy</button>
-                   <button class="btn btn-sm btn-danger" onclick="deleteProfile('${p.id}')">🗑</button>`
+                    : `<button class="btn btn-sm" onclick="probeProfile('${escapeJs(p.id)}')">🔍 Kiểm tra Vân tay</button>
+                       <button class="btn btn-sm btn-danger" onclick="closeProfile('${escapeJs(p.id)}')">■ Đóng</button>`)
+                : (openingProfiles.has(String(p.id))
+                    ? `<button class="btn btn-sm" disabled style="opacity: 0.6; cursor: not-allowed;">⏳ Đang mở...</button>`
+                    : `<button class="btn btn-sm btn-success" onclick="openProfile('${escapeJs(p.id)}', this)">▶ Mở Trình Duyệt</button>
+                   <button class="btn btn-sm" onclick="openProxyModal('${escapeJs(p.id)}')" title="Gán hoặc sửa Proxy cho Profile">🌐 Proxy</button>
+                   <button class="btn btn-sm" onclick="uploadProfileToCloud('${escapeJs(p.id)}')" title="Đẩy profile lên Cloudflare R2">☁️ Đẩy</button>
+                   <button class="btn btn-sm btn-danger" onclick="deleteProfile('${escapeJs(p.id)}')" title="Xóa Profile">🗑</button>`)
               }
+              </div>
             </td>
           </tr>
         `;
       }).join('');
     }
 
+    let lastTestedCreateGeo = null;
+    let lastTestedEditGeo = null;
+
     async function openCreateModal() {
+      lastTestedCreateGeo = null;
       document.getElementById('fName').value = `Profile #${allProfiles.length + 1}`;
       document.getElementById('fProxy').value = '';
       document.getElementById('proxyCheckResult').textContent = '';
+      document.getElementById('fAutoGeo').value = '1';
+      const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (localTz) ensureTimezoneOption(document.getElementById('fTimezone'), localTz);
       await regeneratePreviewFp(true);
       document.getElementById('profileModal').classList.add('active');
     }
@@ -1284,10 +1442,12 @@
 
       if (res.ok && res.result && res.result.ok) {
         const r = res.result;
+        lastTestedCreateGeo = r;
         box.style.color = '#34d399';
         box.textContent = `✓ Kết nối thành công! IP: ${r.ip} | Quốc gia: ${r.country} (${r.countryCode}) | Timezone: ${r.timeZone}`;
-        document.getElementById('fTimezone').value = r.timeZone;
+        ensureTimezoneOption(document.getElementById('fTimezone'), r.timeZone);
       } else {
+        lastTestedCreateGeo = null;
         box.style.color = '#f87171';
         box.textContent = `✕ Lỗi kết nối Proxy: ${(res.result && res.result.error) || res.error || 'Unknown'}`;
       }
@@ -1308,7 +1468,12 @@
         clientRectFp: document.getElementById('fRectFp').value,
         macAddress: st ? st.MacAdderss : undefined,
         deviceName: st ? st.DeviceName : undefined,
-        newTabUrl: document.getElementById('fStartUrl').value.trim() || 'about:blank'
+        newTabUrl: document.getElementById('fStartUrl').value.trim() || 'about:blank',
+        publicIp: lastTestedCreateGeo ? lastTestedCreateGeo.ip : undefined,
+        webRtcAddress: lastTestedCreateGeo ? lastTestedCreateGeo.ip : undefined,
+        geoposition: lastTestedCreateGeo ? lastTestedCreateGeo.geoposition : undefined,
+        langs: lastTestedCreateGeo ? lastTestedCreateGeo.langs : undefined,
+        acceptLang: lastTestedCreateGeo ? lastTestedCreateGeo.acceptLang : undefined
       };
 
       const rawProxy = document.getElementById('fProxy').value.trim();
@@ -1321,24 +1486,40 @@
         fingerprintOverrides: overrides
       };
 
-      await fetch('/api/v1/profiles', {
+      const res = await fetch('/api/v1/profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      });
+      }).then(r => r.json());
+
+      if (!res.ok) {
+        alert('Lỗi lưu Profile: ' + (res.error || 'Unknown'));
+        return;
+      }
 
       closeProfileModal();
       await loadProfiles();
     }
 
-    async function openProfile(id) {
-      const res = await fetch('/api/v1/profile/open', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId: id })
-      }).then(r => r.json());
-      if (!res.ok) alert('Lỗi mở Profile: ' + res.error);
-      await loadProfiles();
+    async function openProfile(id, btnEl) {
+      const pid = String(id);
+      openingProfiles.add(pid);
+      renderTable();
+      try {
+        const res = await fetch('/api/v1/profile/open', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId: id })
+        }).then(r => r.json());
+        if (!res.ok) {
+          alert('Lỗi mở Profile: ' + res.error);
+        } else if (res.data && Array.isArray(res.data.warnings) && res.data.warnings.length > 0) {
+          showToast('⚠️ ' + res.data.warnings.join(' | '), true);
+        }
+      } finally {
+        openingProfiles.delete(pid);
+        await loadProfiles();
+      }
     }
 
     async function closeProfile(id) {
@@ -1762,6 +1943,128 @@
         .replace(/'/g, "\\'")
         .replace(/"/g, '&quot;')
         .replace(/\n/g, ' ');
+    }
+
+    function openProxyModal(id) {
+      const p = allProfiles.find(item => String(item.id) === String(id));
+      if (!p) return;
+      lastTestedEditGeo = null;
+      document.getElementById('editProxyProfileId').value = p.id;
+      document.getElementById('editProxyProfileName').textContent = `Profile: ${p.name} (${p.id})`;
+      document.getElementById('editProxyCheckResult').textContent = '';
+
+      const pc = p.proxyConfig;
+      const typeSel = document.getElementById('editProxyType');
+      const input = document.getElementById('editProxyInput');
+
+      if (!pc || pc.mode === 'direct' || pc.type === 'direct' || (typeof pc === 'object' && !pc.host)) {
+        typeSel.value = 'direct';
+        input.value = '';
+        input.disabled = true;
+      } else if (typeof pc === 'object' && pc.host) {
+        typeSel.value = pc.type || 'http';
+        const auth = pc.username ? `${pc.username}:${pc.password || ''}@` : '';
+        input.value = `${pc.type || 'http'}://${auth}${pc.host}:${pc.port}`;
+        input.disabled = false;
+      } else {
+        typeSel.value = 'auto';
+        input.value = String(pc);
+        input.disabled = false;
+      }
+
+      document.getElementById('editProxyAutoGeo').value = p.autoGeoIp === false ? '0' : '1';
+      document.getElementById('proxyModal').classList.add('active');
+    }
+
+    function closeProxyModal() {
+      document.getElementById('proxyModal').classList.remove('active');
+    }
+
+    function onEditProxyTypeChange() {
+      const typeVal = document.getElementById('editProxyType').value;
+      const input = document.getElementById('editProxyInput');
+      lastTestedEditGeo = null;
+      if (typeVal === 'direct') {
+        input.disabled = true;
+      } else {
+        input.disabled = false;
+      }
+    }
+
+    function buildEditProxyInput() {
+      const typeVal = document.getElementById('editProxyType').value;
+      const raw = document.getElementById('editProxyInput').value.trim();
+      if (typeVal === 'direct' || !raw) return { mode: 'direct' };
+      const cleanRaw = raw.replace(/^[a-zA-Z0-9+.-]+:\/\//, '');
+      if (typeVal === 'auto') {
+        return raw;
+      }
+      return `${typeVal}://${cleanRaw}`;
+    }
+
+    async function testEditProxy() {
+      const box = document.getElementById('editProxyCheckResult');
+      const proxyInput = buildEditProxyInput();
+      box.style.color = '#94a3b8';
+      box.textContent = 'Đang kiểm tra kết nối & phân giải GeoIP...';
+
+      const res = await fetch('/api/v1/proxy/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proxy: proxyInput })
+      }).then(r => r.json());
+
+      if (res.ok && res.result && res.result.ok) {
+        const r = res.result;
+        lastTestedEditGeo = r;
+        box.style.color = '#34d399';
+        box.textContent = `✓ ${r.ip} | ${r.countryCode} | ${r.timeZone} (${r.latencyMs ? r.latencyMs + 'ms' : 'Direct'})`;
+      } else {
+        lastTestedEditGeo = null;
+        box.style.color = '#f87171';
+        box.textContent = `✕ Lỗi: ${(res.result && res.result.error) || res.error || 'Unknown'}`;
+      }
+    }
+
+    async function saveProfileProxy() {
+      const id = document.getElementById('editProxyProfileId').value;
+      const btn = document.getElementById('btnSaveProxy');
+      btn.disabled = true;
+      btn.textContent = 'Đang lưu...';
+      try {
+        const patch = {
+          proxyConfig: buildEditProxyInput(),
+          autoGeoIp: document.getElementById('editProxyAutoGeo').value === '1'
+        };
+        if (lastTestedEditGeo && lastTestedEditGeo.ok) {
+          patch.fingerprintOverrides = {
+            timeZone: lastTestedEditGeo.timeZone,
+            publicIp: lastTestedEditGeo.ip,
+            webRtcAddress: lastTestedEditGeo.ip,
+            geoposition: lastTestedEditGeo.geoposition || '',
+            langs: lastTestedEditGeo.langs,
+            acceptLang: lastTestedEditGeo.acceptLang
+          };
+        }
+        const res = await fetch(`/api/v1/profiles/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch)
+        }).then(r => r.json());
+
+        if (!res.ok) {
+          alert('Lỗi lưu Proxy: ' + (res.error || 'Unknown'));
+          return;
+        }
+        closeProxyModal();
+        showToast('✓ Đã cập nhật cấu hình Proxy cho Profile');
+        await loadProfiles();
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Lưu Proxy';
+      }
     }
 
     function openRenameModal(id, currentName) {

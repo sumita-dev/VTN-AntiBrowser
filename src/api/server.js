@@ -18,7 +18,10 @@ const {
   generateUniqueFingerprint,
   listValidHardwareCombinations
 } = require('../core/fingerprint-gen');
-const { checkProxyConnectivity } = require('../core/proxy-tunnel');
+const {
+  checkProxyConnectivity,
+  serializeProxyConfig
+} = require('../core/proxy-tunnel');
 const { probeRunningProfile } = require('../core/cdp-probe');
 const { AntigravityAuth } = require('../core/agy-auth');
 const { DEFAULT_FLASH_MODELS } = require('../../automation/ai/gemini');
@@ -251,8 +254,23 @@ function createApiServer({ db, browserManager, uiDir }) {
 
       if (req.method === 'POST' && pathname === '/api/v1/profiles/auto-create') {
         const body = await readJsonBody(req);
+        const autoGeoIp = body.autoGeoIp !== undefined ? Boolean(body.autoGeoIp) : true;
+        let proxyConfig = { mode: 'direct' };
+        try {
+          proxyConfig = serializeProxyConfig(body.proxyConfig || { mode: 'direct' });
+        } catch {}
+        const fpOverrides = Object.assign({}, body.fingerprintOverrides || {});
+
         const existingProfiles = db.listProfiles();
-        const fp = generateUniqueFingerprint(body.fingerprintOverrides || {}, existingProfiles);
+        const fp = generateUniqueFingerprint(fpOverrides, existingProfiles);
+        if (fpOverrides.publicIp && fp.dynamicConfig) {
+          fp.dynamicConfig.PublicIP = fpOverrides.publicIp;
+          fp.dynamicConfig.WebRTCAddress = fpOverrides.webRtcAddress || fpOverrides.publicIp;
+        }
+        if (fpOverrides.geoposition && fp.dynamicConfig) {
+          fp.dynamicConfig.Geoposition = fpOverrides.geoposition;
+        }
+
         const bp = HARDWARE_BLUEPRINTS[fp.blueprintId] || {};
         const shortGpu = (bp.label || fp.blueprintId || 'Profile')
           .replace(/^Windows \d+\/?\d* \([^)]+\) — /, 'Win ')
@@ -261,19 +279,23 @@ function createApiServer({ db, browserManager, uiDir }) {
           .replace(/ \([^)]+\)$/, '');
         const defaultName = body.name || `Auto #${existingProfiles.length + 1} — ${shortGpu} (${fp.switches.HardwareConcurrency}C/${fp.switches.DeviceMemory}G)`;
 
-        const created = db.createProfile({
-          name: defaultName,
-          groupName: body.groupName || 'Auto Unique',
-          startUrl: body.startUrl || 'about:blank',
-          autoGeoIp: Boolean(body.autoGeoIp),
-          proxyConfig: body.proxyConfig || { mode: 'direct' },
-          fingerprint: fp
-        });
-        return sendJson(res, 201, {
-          ok: true,
-          profile: created,
-          comparedProfilesCount: existingProfiles.length
-        });
+        try {
+          const created = db.createProfile({
+            name: defaultName,
+            groupName: body.groupName || 'Auto Unique',
+            startUrl: body.startUrl || 'about:blank',
+            autoGeoIp,
+            proxyConfig,
+            fingerprint: fp
+          });
+          return sendJson(res, 201, {
+            ok: true,
+            profile: created,
+            comparedProfilesCount: existingProfiles.length
+          });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
       }
 
       // 3. Profiles CRUD
@@ -299,8 +321,12 @@ function createApiServer({ db, browserManager, uiDir }) {
 
       if (req.method === 'POST' && pathname === '/api/v1/profiles') {
         const body = await readJsonBody(req);
-        const created = db.createProfile(body);
-        return sendJson(res, 201, { ok: true, profile: created });
+        try {
+          const created = db.createProfile(body);
+          return sendJson(res, 201, { ok: true, profile: created });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
       }
 
       if (pathname.startsWith('/api/v1/profiles/')) {
@@ -312,9 +338,13 @@ function createApiServer({ db, browserManager, uiDir }) {
         }
         if (req.method === 'PUT') {
           const body = await readJsonBody(req);
-          const updated = db.updateProfile(profileId, body);
-          if (!updated) return sendJson(res, 404, { ok: false, error: 'Profile not found' });
-          return sendJson(res, 200, { ok: true, profile: updated });
+          try {
+            const updated = db.updateProfile(profileId, body);
+            if (!updated) return sendJson(res, 404, { ok: false, error: 'Profile not found' });
+            return sendJson(res, 200, { ok: true, profile: updated });
+          } catch (err) {
+            return sendJson(res, 400, { ok: false, error: err.message });
+          }
         }
         if (req.method === 'DELETE') {
           await browserManager.purgeProfileDiskData(profileId);

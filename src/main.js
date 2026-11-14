@@ -41,6 +41,41 @@ async function checkExistingVntBrowser(host, port, timeoutMs = 2000) {
 }
 
 /**
+ * Prompts the user with a native Windows Yes/No MessageBox when closing the Manager UI
+ * while one or more browser profiles are still active.
+ * Defaults to `false` (keep profiles alive) on No or on any spawn/dialog error.
+ *
+ * @param {number} activeCount
+ * @returns {Promise<boolean>}
+ */
+function confirmCloseActiveProfiles(activeCount) {
+  const count = Number(activeCount) || 0;
+  const message = `Hiện có ${count} profile trình duyệt đang hoạt động.\nBạn có muốn tắt toàn bộ các profile đang chạy và thoát ứng dụng không?`;
+  const msgBase64 = Buffer.from(message, 'utf8').toString('base64');
+  const psScript = [
+    'Add-Type -AssemblyName System.Windows.Forms',
+    `$msg = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${msgBase64}'))`,
+    '$res = [System.Windows.Forms.MessageBox]::Show($msg, "VTN Anti-Browser", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question, [System.Windows.Forms.MessageBoxDefaultButton]::Button2, [System.Windows.Forms.MessageBoxOptions]::DefaultDesktopOnly)',
+    'if ($res -eq [System.Windows.Forms.DialogResult]::Yes) { exit 0 } else { exit 1 }'
+  ].join('; ');
+  const encodedCommand = Buffer.from(psScript, 'utf16le').toString('base64');
+
+  return new Promise((resolve) => {
+    try {
+      const ps = spawn(
+        'powershell.exe',
+        ['-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', encodedCommand],
+        { stdio: 'ignore', windowsHide: true }
+      );
+      ps.once('error', () => resolve(false));
+      ps.once('exit', (code) => resolve(code === 0));
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+/**
  * Launches the VNT-Browser Manager Dashboard inside a standalone `--app` desktop window.
  * Ensures Chromium 151 kernel is present before launching UI window.
  * If missing, attempts auto-bootstrap from Cloudflare R2.
@@ -166,7 +201,8 @@ async function openManagerAppWindow(dashboardUrl, chromeExe, launchOpts = {}) {
 
   const args = [
     `--app=${dashboardUrl}`,
-    '--window-size=1360,860',
+    '--window-size=1500,920',
+    '--disable-features=Translate',
     ...artifacts.args
   ];
 
@@ -279,49 +315,6 @@ async function startVntBrowser(options = {}) {
     profilesDir: options.profilesDir
   });
 
-  // Seed 2 showcase profiles if database is completely empty
-  if (db.listProfiles().length === 0) {
-    db.createProfile({
-      id: 'vnt_macos_m3',
-      name: 'MacBook Pro M3 Max (Tokyo)',
-      groupName: 'Workstation',
-      startUrl: 'about:blank',
-      fingerprintOverrides: {
-        blueprintId: 'mac_apple_m3_max',
-        hardwareConcurrency: '14',
-        deviceMemory: '32',
-        screenSize: '2560,1440',
-        timeZone: 'Asia/Tokyo',
-        langs: 'ja-JP,ja,en-US,en',
-        acceptLang: 'ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7',
-        canvasMark: '581920',
-        webglMark: '31',
-        audioFp: '19',
-        clientRectFp: '42'
-      }
-    });
-
-    db.createProfile({
-      id: 'vnt_win11_rtx4090',
-      name: 'Windows 11 RTX 4090 (New York)',
-      groupName: 'Ads US',
-      startUrl: 'about:blank',
-      fingerprintOverrides: {
-        blueprintId: 'win_nvidia_rtx4090',
-        hardwareConcurrency: '16',
-        deviceMemory: '64',
-        screenSize: '1920,1080',
-        timeZone: 'America/New_York',
-        langs: 'en-US,en',
-        acceptLang: 'en-US,en;q=0.9',
-        canvasMark: '894123',
-        webglMark: '64',
-        audioFp: '53',
-        clientRectFp: '77'
-      }
-    });
-  }
-
   const server = createApiServer({ db, browserManager });
 
   try {
@@ -385,18 +378,54 @@ async function startVntBrowser(options = {}) {
     }
   }
 
-  let isShuttingDown = false;
-  const shutdown = async () => {
-    if (isShuttingDown) return;
-    isShuttingDown = true;
-    if (appWindow && appWindow.process) {
-      try { appWindow.process.kill(); } catch {}
-    }
-    await browserManager.closeAll();
-    if (server) {
-      await new Promise((resolve) => server.close(() => resolve()));
-    }
-    try { db.db.close(); } catch {}
+  let shutdownPromise = null;
+  let activeProfileWatchCleanup = null;
+  let managerExitCleanup = null;
+
+  const shutdown = () => {
+    if (shutdownPromise) return shutdownPromise;
+    shutdownPromise = (async () => {
+      if (activeProfileWatchCleanup) {
+        try { activeProfileWatchCleanup(); } catch {}
+        activeProfileWatchCleanup = null;
+      }
+      if (managerExitCleanup) {
+        try { managerExitCleanup(); } catch {}
+        managerExitCleanup = null;
+      }
+
+      let safetyTimer = null;
+      const timeoutPromise = new Promise((resolve) => {
+        safetyTimer = setTimeout(() => {
+          console.warn('[VTN Anti-Browser] Shutdown safety timeout (3000ms) reached; forcing exit cleanup.');
+          resolve();
+        }, 3000);
+        if (typeof safetyTimer.unref === 'function') {
+          safetyTimer.unref();
+        }
+      });
+
+      const performShutdown = async () => {
+        if (appWindow && appWindow.process) {
+          try { appWindow.process.kill(); } catch {}
+        }
+        await browserManager.closeAll();
+        if (server) {
+          if (typeof server.closeAllConnections === 'function') {
+            server.closeAllConnections();
+          }
+          await new Promise((resolve) => server.close(() => resolve()));
+        }
+      };
+
+      try {
+        await Promise.race([performShutdown(), timeoutPromise]);
+      } finally {
+        clearTimeout(safetyTimer);
+        try { db.db.close(); } catch {}
+      }
+    })();
+    return shutdownPromise;
   };
 
   const sigHandler = async () => {
@@ -405,6 +434,72 @@ async function startVntBrowser(options = {}) {
   };
   process.once('SIGINT', sigHandler);
   process.once('SIGTERM', sigHandler);
+
+  const isAppWindowMode = (options.openAppWindow || process.argv.includes('--app-window')) && !options.headlessAppWindow;
+  const shouldWatchAppWindowExit = isAppWindowMode && (require.main === module || options.exitOnAppWindowClose !== false);
+
+  if (shouldWatchAppWindowExit && appWindow && appWindow.process && !appWindow.fallback && !appWindow.handedOff) {
+    let managerCloseHandled = false;
+    const confirmFn = typeof options.confirmCloseProfiles === 'function'
+      ? options.confirmCloseProfiles
+      : confirmCloseActiveProfiles;
+
+    const finishAndExit = async () => {
+      await shutdown();
+      if (options.exitProcess !== false) {
+        process.exit(0);
+      }
+    };
+
+    const onManagerClosed = async () => {
+      if (managerCloseHandled || shutdownPromise) return;
+      managerCloseHandled = true;
+
+      if (browserManager.activeSessions.size === 0) {
+        await finishAndExit();
+        return;
+      }
+
+      let shouldCloseAll = false;
+      try {
+        shouldCloseAll = Boolean(await confirmFn(browserManager.activeSessions.size));
+      } catch {
+        shouldCloseAll = false;
+      }
+
+      if (shutdownPromise) return;
+
+      if (shouldCloseAll || browserManager.activeSessions.size === 0) {
+        await finishAndExit();
+        return;
+      }
+
+      const onProfileState = async () => {
+        if (browserManager.activeSessions.size === 0) {
+          browserManager.off('profile:state', onProfileState);
+          activeProfileWatchCleanup = null;
+          await finishAndExit();
+        }
+      };
+      activeProfileWatchCleanup = () => browserManager.off('profile:state', onProfileState);
+      browserManager.on('profile:state', onProfileState);
+
+      if (browserManager.activeSessions.size === 0) {
+        browserManager.off('profile:state', onProfileState);
+        activeProfileWatchCleanup = null;
+        await finishAndExit();
+      }
+    };
+
+    if (appWindow.process.exitCode !== null || appWindow.process.signalCode !== null) {
+      void onManagerClosed();
+    } else {
+      appWindow.process.once('exit', onManagerClosed);
+      managerExitCleanup = () => {
+        try { appWindow.process.off('exit', onManagerClosed); } catch {}
+      };
+    }
+  }
 
   return {
     url: dashboardUrl,
@@ -438,5 +533,6 @@ module.exports = {
   startVntBrowser,
   openManagerAppWindow,
   launchAppWindowWithFallback,
-  checkExistingVntBrowser
+  checkExistingVntBrowser,
+  confirmCloseActiveProfiles
 };

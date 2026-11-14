@@ -1,5 +1,7 @@
 param(
-    [switch]$SkipKernel
+    [switch]$SkipKernel,
+    [switch]$SkipSign,
+    [string]$CertThumbprint = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,6 +51,59 @@ if (-not (Test-Path $IconPath)) {
 
 if ($LASTEXITCODE -ne 0) {
     throw "csc.exe failed with exit code $LASTEXITCODE"
+}
+
+if (-not $SkipSign) {
+    Write-Host '[2b/5] Signing VTN-AntiBrowser.exe...'
+    $SignTool = Get-ChildItem -Path 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending |
+        Select-Object -First 1 -ExpandProperty FullName
+    if (-not $SignTool) {
+        $SignToolCmd = Get-Command signtool.exe -ErrorAction SilentlyContinue
+        if ($SignToolCmd) { $SignTool = $SignToolCmd.Source }
+    }
+    if (-not $SignTool -or -not (Test-Path $SignTool)) {
+        throw 'signtool.exe not found under Windows Kits 10 bin\*\x64 or PATH. Pass -SkipSign to bypass signing.'
+    }
+
+    if ([string]::IsNullOrWhiteSpace($CertThumbprint)) {
+        $SigningCert = Get-ChildItem -Path 'Cert:\CurrentUser\My' -CodeSigningCert -ErrorAction SilentlyContinue |
+            Where-Object { $_.Subject -eq 'CN=VTN-AntiBrowser' } |
+            Sort-Object NotAfter -Descending |
+            Select-Object -First 1
+        if (-not $SigningCert) {
+            throw 'CodeSigning certificate CN=VTN-AntiBrowser not found in Cert:\CurrentUser\My. Pass -CertThumbprint or -SkipSign.'
+        }
+        $CertThumbprint = $SigningCert.Thumbprint
+    }
+
+    & $SignTool sign /fd SHA256 /s My /sha1 $CertThumbprint /tr 'http://timestamp.digicert.com' /td SHA256 $LauncherExe
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "Timestamped signing failed (exit code $LASTEXITCODE); retrying without RFC3161 timestamp..."
+        & $SignTool sign /fd SHA256 /s My /sha1 $CertThumbprint $LauncherExe
+        if ($LASTEXITCODE -ne 0) {
+            throw "signtool.exe failed with exit code $LASTEXITCODE"
+        }
+    }
+
+    $Sig = Get-AuthenticodeSignature -FilePath $LauncherExe
+    if (-not $Sig.SignerCertificate) {
+        throw "Authenticode signature missing: Status=$($Sig.Status), StatusMessage=$($Sig.StatusMessage)"
+    }
+    if ($Sig.Status -eq 'Valid') {
+        Write-Host ("      Signed successfully: Thumbprint={0}, Status={1}" -f $Sig.SignerCertificate.Thumbprint, $Sig.Status)
+    } elseif ($Sig.Status -eq 'UnknownError') {
+        Write-Warning ("Signed with self-signed cert (Root not yet trusted locally): Thumbprint={0}, Status={1}, Message={2}" -f $Sig.SignerCertificate.Thumbprint, $Sig.Status, $Sig.StatusMessage)
+    } else {
+        throw "Authenticode signature verification failed: Status=$($Sig.Status), StatusMessage=$($Sig.StatusMessage)"
+    }
+
+    $RepoCer = Join-Path $RepoRoot 'certs\VTN-AntiBrowser.cer'
+    if (Test-Path $RepoCer) {
+        Copy-Item -Path $RepoCer -Destination (Join-Path $PortableDir 'VTN-AntiBrowser.cer') -Force
+    }
+} else {
+    Write-Host '[2b/5] -SkipSign specified: skipping Authenticode signing.'
 }
 
 Write-Host '[3/5] Copying Node.js runtime...'

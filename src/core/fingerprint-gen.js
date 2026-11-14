@@ -1204,7 +1204,7 @@ function generateFingerprint(overrides = {}) {
 
   const langs = overrides.langs || 'en-US,en';
   const acceptLang = overrides.acceptLang || 'en-US,en;q=0.9';
-  const timeZone = overrides.timeZone || 'America/New_York';
+  const timeZone = overrides.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const userAgent = overrides.userAgent || bp.uaTemplate;
   const deviceName = overrides.deviceName || generateDeviceName(bp.os, bp.id);
   const macAddress = overrides.macAddress || generateMacAddress(bp.os, bp.macPrefix);
@@ -1253,9 +1253,9 @@ function generateFingerprint(overrides = {}) {
       TimeZone: timeZone,
       DisableWebRTC: overrides.disableWebRTC || '0',
       WebRTCIceServer: overrides.webRtcIceServer || '1',
-      PublicIP: overrides.publicIp || '198.51.100.42',
-      WebRTCAddress: overrides.webRtcAddress || overrides.publicIp || '198.51.100.42',
-      Geoposition: overrides.geoposition || '40.7128,-74.0060,25'
+      PublicIP: overrides.publicIp || '',
+      WebRTCAddress: overrides.webRtcAddress || overrides.publicIp || '',
+      Geoposition: overrides.geoposition || ''
     }, overrides.dynamicConfig || {}),
     webglFp: Object.assign({}, bp.webgl, overrides.webglFp || {})
   };
