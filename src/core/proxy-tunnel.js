@@ -54,7 +54,7 @@ function waitForPortOpen(port, timeoutMs = 4000) {
         if (Date.now() - start >= timeoutMs) {
           resolve(false);
         } else {
-          setTimeout(tryConnect, 100);
+          setTimeout(tryConnect, 25);
         }
       };
       sock.once('error', onFail);
@@ -79,46 +79,94 @@ function normalizeProxyConfig(proxyInput) {
     }
     let pType = (proxyInput.type || 'http').toLowerCase();
     if (pType === 'socks' || pType === 'socks5h') pType = 'socks5';
+    const host = String(proxyInput.host).trim();
+    const port = Number(proxyInput.port);
+    if (!host || !Number.isInteger(port) || port < 1 || port > 65535) {
+      return null;
+    }
     return {
       type: pType,
-      host: String(proxyInput.host).trim(),
-      port: Number(proxyInput.port),
-      username: proxyInput.username ? String(proxyInput.username) : '',
+      host,
+      port,
+      username: proxyInput.username ? String(proxyInput.username).trim() : '',
       password: proxyInput.password ? String(proxyInput.password) : ''
     };
   }
 
   const raw = String(proxyInput).trim();
-  if (!raw || raw === 'direct') return null;
+  if (!raw || raw.toLowerCase() === 'direct') return null;
 
-  try {
-    if (raw.includes('://')) {
-      const u = new URL(raw);
-      let pType = u.protocol.replace(':', '').toLowerCase();
-      if (pType === 'socks' || pType === 'socks5h') pType = 'socks5';
+  let pType = 'http';
+  let rest = raw;
+  const schemeMatch = raw.match(/^([a-zA-Z0-9+.-]+):\/\/(.*)$/);
+  if (schemeMatch) {
+    pType = schemeMatch[1].toLowerCase();
+    if (pType === 'socks' || pType === 'socks5h') pType = 'socks5';
+    rest = schemeMatch[2].trim();
+  }
+  if (!rest) return null;
+
+  // 1. Check host:port[:user:pass] (supports email usernames like host:port:user@domain.com:pass)
+  const parts = rest.split(':');
+  if (parts.length >= 2 && !parts[0].includes('@') && /^\d+$/.test(parts[1])) {
+    const host = (parts[0] || '').trim();
+    const port = Number(parts[1]);
+    if (host && Number.isInteger(port) && port >= 1 && port <= 65535) {
       return {
         type: pType,
-        host: u.hostname,
-        port: Number(u.port),
-        username: decodeURIComponent(u.username || ''),
+        host,
+        port,
+        username: (parts[2] || '').trim(),
+        password: parts.slice(3).join(':') || ''
+      };
+    }
+    return null;
+  }
+
+  // 2. Standard URL format [user:pass@]host:port
+  try {
+    const u = new URL(`${pType}://${rest}`);
+    const host = (u.hostname || '').trim();
+    const port = Number(u.port);
+    if (host && Number.isInteger(port) && port >= 1 && port <= 65535) {
+      return {
+        type: pType,
+        host,
+        port,
+        username: decodeURIComponent(u.username || '').trim(),
         password: decodeURIComponent(u.password || '')
       };
     }
   } catch {
-    // Fallback to colon-separated format host:port:user:pass
-  }
-
-  const parts = raw.split(':');
-  if (parts.length >= 2) {
-    return {
-      type: 'http',
-      host: parts[0],
-      port: Number(parts[1]),
-      username: parts[2] || '',
-      password: parts.slice(3).join(':') || ''
-    };
+    return null;
   }
   return null;
+}
+
+/**
+ * Serializes a proxy configuration input into a canonical DB-storable object.
+ *
+ * @param {Object|string|null|undefined} proxyInput
+ * @returns {{ mode: 'direct' } | { mode: 'proxy', type: string, host: string, port: number, username: string, password: string }}
+ */
+function serializeProxyConfig(proxyInput) {
+  if (!proxyInput) return { mode: 'direct' };
+  if (typeof proxyInput === 'string') {
+    const trimmed = proxyInput.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'direct') {
+      return { mode: 'direct' };
+    }
+  } else if (typeof proxyInput === 'object') {
+    if (proxyInput.mode === 'direct' || proxyInput.type === 'direct' || (!proxyInput.host && !proxyInput.port)) {
+      return { mode: 'direct' };
+    }
+  }
+
+  const norm = normalizeProxyConfig(proxyInput);
+  if (!norm) {
+    throw new Error('Cấu hình Proxy không hợp lệ (hỗ trợ dạng type://user:pass@host:port hoặc host:port:user:pass với port 1-65535).');
+  }
+  return Object.assign({ mode: 'proxy' }, norm);
 }
 
 /**
@@ -247,10 +295,10 @@ const COUNTRY_TO_LANGS = {
 };
 
 /**
- * Resolves exit IP, TimeZone, Geoposition, and Country Code via `ip-api.com` (with fallback).
+ * Resolves exit IP, TimeZone, Geoposition, and Country Code via parallel `ip-api.com` and `ipwho.is` queries.
  *
  * @param {number|null} [localProxyPort=null]
- * @param {number} [timeoutMs=5000]
+ * @param {number} [timeoutMs=2500]
  * @returns {Promise<{
  *   ok: boolean,
  *   ip?: string,
@@ -264,8 +312,8 @@ const COUNTRY_TO_LANGS = {
  *   error?: string
  * }>}
  */
-async function resolveGeoIp(localProxyPort = null, timeoutMs = 5000) {
-  try {
+async function resolveGeoIp(localProxyPort = null, timeoutMs = 2500) {
+  const queryIpApi = async () => {
     const data = await fetchJsonViaLocalHttpProxy(
       'http://ip-api.com/json/?fields=status,message,country,countryCode,city,lat,lon,timezone,query',
       localProxyPort,
@@ -280,16 +328,82 @@ async function resolveGeoIp(localProxyPort = null, timeoutMs = 5000) {
         countryCode: cc,
         country: data.country || '',
         city: data.city || '',
-        timeZone: data.timezone || 'America/New_York',
-        geoposition: `${data.lat ?? 40.7128},${data.lon ?? -74.0060},25`,
+        timeZone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        geoposition: (data.lat != null && data.lon != null) ? `${data.lat},${data.lon},25` : '',
         langs: langInfo.langs,
         acceptLang: langInfo.acceptLang
       };
     }
-    return { ok: false, error: (data && data.message) || 'GeoIP lookup returned non-success status' };
-  } catch (err) {
-    return { ok: false, error: err.message };
+    throw new Error((data && data.message) || 'GeoIP ip-api returned non-success status');
+  };
+
+  const queryIpWhoIs = async () => {
+    const data2 = await fetchJsonViaLocalHttpProxy(
+      'http://ipwho.is/',
+      localProxyPort,
+      timeoutMs
+    );
+    if (data2 && data2.success !== false && data2.ip) {
+      const cc = data2.country_code || 'US';
+      const langInfo = COUNTRY_TO_LANGS[cc] || COUNTRY_TO_LANGS.US;
+      const tz = (data2.timezone && data2.timezone.id) || data2.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+      return {
+        ok: true,
+        ip: data2.ip,
+        countryCode: cc,
+        country: data2.country || '',
+        city: data2.city || '',
+        timeZone: tz,
+        geoposition: (data2.latitude != null && data2.longitude != null) ? `${data2.latitude},${data2.longitude},25` : '',
+        langs: langInfo.langs,
+        acceptLang: langInfo.acceptLang
+      };
+    }
+    throw new Error((data2 && data2.message) || 'GeoIP ipwho.is returned non-success status');
+  };
+
+  try {
+    return await Promise.any([queryIpApi(), queryIpWhoIs()]);
+  } catch (aggErr) {
+    const errMsg = (aggErr.errors && Array.isArray(aggErr.errors))
+      ? aggErr.errors.map(e => (e && e.message) || String(e)).join('; ')
+      : aggErr.message;
+    return { ok: false, error: errMsg || 'GeoIP lookup failed' };
   }
+}
+
+let _directGeoIpCache = null;
+let _directGeoIpCacheTime = 0;
+const DIRECT_GEOIP_CACHE_TTL_MS = 60000;
+
+/**
+ * Resolves GeoIP for direct (no proxy) connection with a 60-second in-memory cache.
+ *
+ * @param {number} [timeoutMs=2500]
+ * @returns {Promise<{
+ *   ok: boolean,
+ *   ip?: string,
+ *   countryCode?: string,
+ *   country?: string,
+ *   city?: string,
+ *   timeZone?: string,
+ *   geoposition?: string,
+ *   langs?: string,
+ *   acceptLang?: string,
+ *   error?: string
+ * }>}
+ */
+async function resolveDirectGeoIpCached(timeoutMs = 2500) {
+  const now = Date.now();
+  if (_directGeoIpCache && (now - _directGeoIpCacheTime) < DIRECT_GEOIP_CACHE_TTL_MS) {
+    return _directGeoIpCache;
+  }
+  const res = await resolveGeoIp(null, timeoutMs);
+  if (res && res.ok) {
+    _directGeoIpCache = res;
+    _directGeoIpCacheTime = now;
+  }
+  return res;
 }
 
 /**
@@ -300,11 +414,18 @@ async function resolveGeoIp(localProxyPort = null, timeoutMs = 5000) {
  * @returns {Promise<Object>}
  */
 async function checkProxyConnectivity(proxyInput) {
-  const norm = normalizeProxyConfig(proxyInput);
-  if (!norm) {
+  let serialized;
+  try {
+    serialized = serializeProxyConfig(proxyInput);
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+  if (serialized.mode === 'direct') {
     const directRes = await resolveGeoIp(null, 5000);
     return Object.assign({ mode: 'direct' }, directRes);
   }
+
+  const norm = normalizeProxyConfig(serialized);
 
   let tunnel = null;
   const startMs = Date.now();
@@ -326,7 +447,9 @@ module.exports = {
   getFreeLocalPort,
   waitForPortOpen,
   normalizeProxyConfig,
+  serializeProxyConfig,
   startProxyTunnel,
   resolveGeoIp,
+  resolveDirectGeoIpCached,
   checkProxyConnectivity
 };

@@ -18,9 +18,16 @@ const {
   generateUniqueFingerprint,
   listValidHardwareCombinations
 } = require('../core/fingerprint-gen');
-const { checkProxyConnectivity } = require('../core/proxy-tunnel');
-const { probeRunningProfile } = require('../core/cdp-probe');
-const { BIN_DIR, readUiAsset } = require('../core/paths');
+const {
+  checkProxyConnectivity,
+  serializeProxyConfig
+} = require('../core/proxy-tunnel');
+const { probeRunningProfile, injectCookiesViaCdp, openUrlViaCdp } = require('../core/cdp-probe');
+const { BIN_DIR, DATA_DIR, APP_ROOT, readUiAsset } = require('../core/paths');
+
+// AGY / Facebook AI Hub config (separate from AI Studio provider config `ai_provider_config.json`)
+const HUB_AI_CONFIG_PATH = path.join(DATA_DIR, 'ai_config.json');
+const FB_ACCOUNTS_PATH = path.join(APP_ROOT, 'automation', 'config', 'accounts_facebook.json');
 const { VtnMcpServer, validateLocalOriginAndHost } = require('../core/mcp-server');
 const { AiClient } = require('../core/ai-client');
 const { auditProfile, applyAuditFix } = require('../core/ai-auditor');
@@ -35,6 +42,81 @@ const {
   downloadAndStageUpdate,
   rollbackUpdate
 } = require('../core/app-updater');
+const { parseCookiesInput, mergeCookies } = require('../core/cookie-parser');
+const { AntigravityAuth } = require('../core/agy-auth');
+const { DEFAULT_FLASH_MODELS } = require('../../automation/ai/gemini');
+const agyAuth = new AntigravityAuth();
+
+function normalizeCookieDomainForMatch(domain) {
+  const d = String(domain || '').trim().toLowerCase().replace(/^\.+/, '');
+  if (d.startsWith('www.')) {
+    const stripped = d.slice(4);
+    if (stripped.includes('.')) return stripped;
+  }
+  return d;
+}
+
+function cookieMatchesDomain(cookieDomain, targetDomain) {
+  const d = normalizeCookieDomainForMatch(cookieDomain);
+  const target = normalizeCookieDomainForMatch(targetDomain);
+  if (!d || !target) return false;
+  if (target === 'facebook.com') {
+    return d === 'facebook.com' || d.endsWith('.facebook.com');
+  }
+  if (target === 'instagram.com') {
+    return d === 'instagram.com' || d.endsWith('.instagram.com');
+  }
+  if (target === 'x.com' || target === 'twitter.com') {
+    return d === 'x.com' || d.endsWith('.x.com') || d === 'twitter.com' || d.endsWith('.twitter.com');
+  }
+  if (target === 'tiktok.com') {
+    return d === 'tiktok.com' || d.endsWith('.tiktok.com');
+  }
+  return d === target;
+}
+
+function maskApiKey(k) {
+  if (!k || typeof k !== 'string') return '';
+  if (k.length >= 12) return k.slice(0, 6) + '••••••' + k.slice(-4);
+  return '••••••••';
+}
+
+function extractRawApiKeys(cfg) {
+  const candidates = [];
+  if (cfg && Array.isArray(cfg.apiKeys)) {
+    for (const k of cfg.apiKeys) candidates.push(k);
+  }
+  if (cfg && typeof cfg.apiKey === 'string' && cfg.apiKey) {
+    candidates.push(cfg.apiKey);
+  }
+  const seen = new Set();
+  const result = [];
+  for (const raw of candidates) {
+    const trimmed = typeof raw === 'string' ? raw.trim() : '';
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    result.push(trimmed);
+  }
+  return result;
+}
+
+function sanitizeAiConfigResponse(cfg) {
+  const rawKeys = extractRawApiKeys(cfg);
+  const maskedKeys = rawKeys.map(maskApiKey);
+  const models = (cfg && Array.isArray(cfg.models) && cfg.models.length > 0)
+    ? cfg.models
+    : DEFAULT_FLASH_MODELS;
+  const out = Object.assign({}, cfg, {
+    apiKey: maskedKeys[0] || '',
+    apiKeys: maskedKeys,
+    apiKeysMasked: maskedKeys,
+    apiKeyCount: rawKeys.length,
+    hasApiKey: rawKeys.length > 0,
+    models,
+    defaultModels: DEFAULT_FLASH_MODELS
+  });
+  return out;
+}
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -90,6 +172,45 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
   const aiClient = injectedAiClient || new AiClient();
   const aiWarmer = new AiAccountWarmer({ db, browserManager, aiClient });
   const mcpServer = new VtnMcpServer({ db, browserManager, aiClient, aiWarmer });
+  const sseClients = new Set();
+
+  const broadcastProfileState = (payload) => {
+    if (sseClients.size === 0) return;
+    const message = `event: profile-state\ndata: ${JSON.stringify(payload)}\n\n`;
+    for (const client of sseClients) {
+      try {
+        client.write(message);
+      } catch {
+        sseClients.delete(client);
+      }
+    }
+  };
+
+  if (browserManager && typeof browserManager.on === 'function') {
+    browserManager.on('profile:state', broadcastProfileState);
+  }
+
+  const sseHeartbeat = setInterval(() => {
+    for (const client of sseClients) {
+      try {
+        client.write(': ping\n\n');
+      } catch {
+        sseClients.delete(client);
+      }
+    }
+  }, 25000);
+  if (typeof sseHeartbeat.unref === 'function') sseHeartbeat.unref();
+
+  const cleanupSse = () => {
+    clearInterval(sseHeartbeat);
+    if (browserManager && typeof browserManager.off === 'function') {
+      browserManager.off('profile:state', broadcastProfileState);
+    }
+    for (const client of sseClients) {
+      try { client.end(); } catch {}
+    }
+    sseClients.clear();
+  };
 
   const server = http.createServer(async (req, res) => {
     const urlObj = new URL(req.url, 'http://127.0.0.1');
@@ -173,7 +294,25 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
         }
       }
 
-      // 2. System Status & Blueprints
+      // 2. System Status, Realtime SSE Events & Blueprints
+      if (req.method === 'GET' && pathname === '/api/v1/events') {
+        if (typeof req.setTimeout === 'function') req.setTimeout(0);
+        if (typeof res.setTimeout === 'function') res.setTimeout(0);
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.write(': connected\n\n');
+        sseClients.add(res);
+        const removeClient = () => sseClients.delete(res);
+        req.on('close', removeClient);
+        res.on('close', removeClient);
+        res.on('error', removeClient);
+        return;
+      }
+
       if (req.method === 'GET' && pathname === '/api/v1/status') {
         return sendJson(res, 200, {
           ok: true,
@@ -221,8 +360,23 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
 
       if (req.method === 'POST' && pathname === '/api/v1/profiles/auto-create') {
         const body = await readJsonBody(req);
+        const autoGeoIp = body.autoGeoIp !== undefined ? Boolean(body.autoGeoIp) : true;
+        let proxyConfig = { mode: 'direct' };
+        try {
+          proxyConfig = serializeProxyConfig(body.proxyConfig || { mode: 'direct' });
+        } catch {}
+        const fpOverrides = Object.assign({}, body.fingerprintOverrides || {});
+
         const existingProfiles = db.listProfiles();
-        const fp = generateUniqueFingerprint(body.fingerprintOverrides || {}, existingProfiles);
+        const fp = generateUniqueFingerprint(fpOverrides, existingProfiles);
+        if (fpOverrides.publicIp && fp.dynamicConfig) {
+          fp.dynamicConfig.PublicIP = fpOverrides.publicIp;
+          fp.dynamicConfig.WebRTCAddress = fpOverrides.webRtcAddress || fpOverrides.publicIp;
+        }
+        if (fpOverrides.geoposition && fp.dynamicConfig) {
+          fp.dynamicConfig.Geoposition = fpOverrides.geoposition;
+        }
+
         const bp = HARDWARE_BLUEPRINTS[fp.blueprintId] || {};
         const shortGpu = (bp.label || fp.blueprintId || 'Profile')
           .replace(/^Windows \d+\/?\d* \([^)]+\) — /, 'Win ')
@@ -231,19 +385,23 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
           .replace(/ \([^)]+\)$/, '');
         const defaultName = body.name || `Auto #${existingProfiles.length + 1} — ${shortGpu} (${fp.switches.HardwareConcurrency}C/${fp.switches.DeviceMemory}G)`;
 
-        const created = db.createProfile({
-          name: defaultName,
-          groupName: body.groupName || 'Auto Unique',
-          startUrl: body.startUrl || 'about:blank',
-          autoGeoIp: Boolean(body.autoGeoIp),
-          proxyConfig: body.proxyConfig || { mode: 'direct' },
-          fingerprint: fp
-        });
-        return sendJson(res, 201, {
-          ok: true,
-          profile: created,
-          comparedProfilesCount: existingProfiles.length
-        });
+        try {
+          const created = db.createProfile({
+            name: defaultName,
+            groupName: body.groupName || 'Auto Unique',
+            startUrl: body.startUrl || 'about:blank',
+            autoGeoIp,
+            proxyConfig,
+            fingerprint: fp
+          });
+          return sendJson(res, 201, {
+            ok: true,
+            profile: created,
+            comparedProfilesCount: existingProfiles.length
+          });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
       }
 
       // 3. Profiles CRUD
@@ -258,7 +416,8 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
                   debuggingPort: sess.debuggingPort,
                   browserWsEndpoint: sess.browserWsEndpoint,
                   pageWsEndpoint: sess.pageWsEndpoint,
-                  startedAt: sess.startedAt
+                  startedAt: sess.startedAt,
+                  closing: Boolean(sess.closing)
                 }
               : null
           });
@@ -268,8 +427,96 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
 
       if (req.method === 'POST' && pathname === '/api/v1/profiles') {
         const body = await readJsonBody(req);
-        const created = db.createProfile(body);
-        return sendJson(res, 201, { ok: true, profile: created });
+        try {
+          if (typeof body.rawCookies === 'string' && body.rawCookies.trim()) {
+            body.cookies = parseCookiesInput(body.rawCookies, {
+              defaultDomain: body.cookieDomain || body.defaultDomain || ''
+            });
+          }
+          const created = db.createProfile(body);
+          return sendJson(res, 201, { ok: true, profile: created });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      const cookieRouteMatch = pathname.match(/^\/api\/v1\/profiles\/([^/]+)\/cookies$/);
+      if (cookieRouteMatch) {
+        const profileId = decodeURIComponent(cookieRouteMatch[1]);
+        const existing = db.getProfile(profileId);
+        if (!existing) return sendJson(res, 404, { ok: false, error: 'Profile not found' });
+
+        if (req.method === 'GET') {
+          return sendJson(res, 200, {
+            ok: true,
+            cookies: existing.cookies || [],
+            count: Array.isArray(existing.cookies) ? existing.cookies.length : 0
+          });
+        }
+
+        if (req.method === 'POST') {
+          const body = await readJsonBody(req);
+          try {
+            const input = body.rawCookies !== undefined ? body.rawCookies : body.cookies;
+            const parsed = parseCookiesInput(input, {
+              defaultDomain: body.defaultDomain || body.cookieDomain || ''
+            });
+            const mode = body.mode === 'merge' ? 'merge' : 'replace';
+            const finalCookies = mode === 'merge'
+              ? mergeCookies(existing.cookies || [], parsed)
+              : parsed;
+
+            const updated = db.updateProfile(profileId, { cookies: finalCookies });
+
+            let injectedLive = false;
+            if (browserManager.isRunning(profileId) && body.injectIfRunning !== false && parsed.length > 0) {
+              const sess = browserManager.getSession(profileId);
+              if (sess && sess.debuggingPort) {
+                await injectCookiesViaCdp(sess.debuggingPort, parsed);
+                injectedLive = true;
+              }
+            }
+
+            const domains = Array.from(new Set(finalCookies.map((c) => c.domain)));
+            return sendJson(res, 200, {
+              ok: true,
+              profile: updated,
+              importedCount: parsed.length,
+              totalCookies: finalCookies.length,
+              injectedLive,
+              domains
+            });
+          } catch (err) {
+            return sendJson(res, 400, { ok: false, error: err.message });
+          }
+        }
+
+        if (req.method === 'DELETE') {
+          let domainFilter = urlObj.searchParams.get('domain') || '';
+          if (!domainFilter) {
+            try {
+              const body = await readJsonBody(req);
+              if (body && typeof body.domain === 'string') {
+                domainFilter = body.domain;
+              }
+            } catch {}
+          }
+          const normalizedDomain = normalizeCookieDomainForMatch(domainFilter);
+          if (normalizedDomain) {
+            const currentCookies = Array.isArray(existing.cookies) ? existing.cookies : [];
+            const remainingCookies = currentCookies.filter((c) => !cookieMatchesDomain(c.domain, normalizedDomain));
+            const updated = db.updateProfile(profileId, { cookies: remainingCookies });
+            return sendJson(res, 200, {
+              ok: true,
+              profile: updated,
+              totalCookies: remainingCookies.length,
+              removedCount: currentCookies.length - remainingCookies.length,
+              domain: normalizedDomain
+            });
+          }
+          const updated = db.updateProfile(profileId, { cookies: [] });
+          return sendJson(res, 200, { ok: true, profile: updated, totalCookies: 0 });
+        }
       }
 
       if (pathname.startsWith('/api/v1/profiles/')) {
@@ -281,9 +528,13 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
         }
         if (req.method === 'PUT') {
           const body = await readJsonBody(req);
-          const updated = db.updateProfile(profileId, body);
-          if (!updated) return sendJson(res, 404, { ok: false, error: 'Profile not found' });
-          return sendJson(res, 200, { ok: true, profile: updated });
+          try {
+            const updated = db.updateProfile(profileId, body);
+            if (!updated) return sendJson(res, 404, { ok: false, error: 'Profile not found' });
+            return sendJson(res, 200, { ok: true, profile: updated });
+          } catch (err) {
+            return sendJson(res, 400, { ok: false, error: err.message });
+          }
         }
         if (req.method === 'DELETE') {
           await browserManager.purgeProfileDiskData(profileId);
@@ -306,6 +557,37 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
           proxyConfig: body.proxyConfig || body.proxy
         });
         return sendJson(res, 200, { ok: true, data: launchInfo });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/profile/open-url') {
+        const body = await readJsonBody(req);
+        const profileId = body.profileId || body.profile_id || body.id;
+        const targetUrl = typeof body.url === 'string' ? body.url.trim() : '';
+        if (!profileId) {
+          return sendJson(res, 400, { ok: false, error: 'Missing profileId' });
+        }
+        const profile = db.getProfile(profileId);
+        if (!profile) {
+          return sendJson(res, 404, { ok: false, error: 'Profile not found' });
+        }
+        let parsedTargetUrl;
+        try {
+          parsedTargetUrl = new URL(targetUrl);
+        } catch {
+          return sendJson(res, 400, { ok: false, error: 'Invalid url: must start with http:// or https://' });
+        }
+        if (parsedTargetUrl.protocol !== 'http:' && parsedTargetUrl.protocol !== 'https:') {
+          return sendJson(res, 400, { ok: false, error: 'Invalid url: must start with http:// or https://' });
+        }
+        if (browserManager.isRunning(profileId)) {
+          const sess = browserManager.getSession(profileId);
+          if (sess && sess.debuggingPort) {
+            await openUrlViaCdp(sess.debuggingPort, targetUrl);
+            return sendJson(res, 200, { ok: true, mode: 'cdp-tab', url: targetUrl });
+          }
+        }
+        const launchInfo = await browserManager.openProfile(profileId, { startUrl: targetUrl });
+        return sendJson(res, 200, { ok: true, mode: 'launch', url: targetUrl, data: launchInfo });
       }
 
       if (req.method === 'POST' && pathname === '/api/v1/profile/close') {
@@ -648,17 +930,216 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
       }
 
       // 8. VTN AI Studio — Provider Config & 5 AI Capabilities
-      if (req.method === 'GET' && pathname === '/api/v1/ai/config') {
+      if (req.method === 'GET' && pathname === '/api/v1/ai/provider-config') {
         return sendJson(res, 200, { ok: true, config: aiClient.getMaskedConfig() });
       }
 
-      if (req.method === 'POST' && pathname === '/api/v1/ai/config') {
+      if (req.method === 'POST' && pathname === '/api/v1/ai/provider-config') {
         const body = await readJsonBody(req);
         try {
           const config = aiClient.saveConfig(body || {});
           return sendJson(res, 200, { ok: true, config });
         } catch (err) {
           return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      // 7. AI Automation & Antigravity 2.0 Google OAuth Hub
+      if (req.method === 'GET' && pathname === '/api/v1/ai/status') {
+        const authStatus = await agyAuth.getAuthStatus();
+        const aiConfigPath = HUB_AI_CONFIG_PATH;
+        let savedConfig = {
+          persona: 'Ban la nguoi dung mang xa hoi tu nhien, tich cuc, binh luan ngan gon sat noi dung.',
+          autoLike: true,
+          autoComment: true,
+          autoJoinGroup: true,
+          locale: 'VN',
+          maxChars: 120,
+          targetGroups: [],
+          apiKey: '',
+          apiKeys: [],
+          models: DEFAULT_FLASH_MODELS
+        };
+        if (fs.existsSync(aiConfigPath)) {
+          try { savedConfig = Object.assign({}, savedConfig, JSON.parse(fs.readFileSync(aiConfigPath, 'utf8'))); } catch (e) {}
+        }
+        return sendJson(res, 200, { ok: true, auth: authStatus, config: sanitizeAiConfigResponse(savedConfig) });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/oauth/login') {
+        try {
+          const body = await readJsonBody(req);
+          const flow = await agyAuth.startOAuthFlow({
+            openBrowser: body.openBrowser !== false,
+            pendingEmail: body.pendingEmail || ''
+          });
+          return sendJson(res, 200, { ok: true, url: flow.url, port: flow.port, state: flow.state });
+        } catch (err) {
+          return sendJson(res, 500, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/oauth/callback-manual') {
+        try {
+          const body = await readJsonBody(req);
+          const account = await agyAuth.completeManualCallback(body.callbackUrl);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, account, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/oauth/logout') {
+        agyAuth.clearToken();
+        return sendJson(res, 200, { ok: true, message: 'Đã ngắt kết nối Antigravity OAuth' });
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/pending') {
+        try {
+          const body = await readJsonBody(req);
+          const pendingEmails = agyAuth.savePendingAccounts(body.pendingEmails || []);
+          return sendJson(res, 200, { ok: true, pendingEmails });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/import-json') {
+        try {
+          const body = await readJsonBody(req);
+          const result = await agyAuth.importJsonAccounts(body.jsonText ?? body.accounts ?? body);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, ...result, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/import-local') {
+        try {
+          const result = await agyAuth.importFromLocalAntigravity();
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, ...result, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/select') {
+        try {
+          const body = await readJsonBody(req);
+          agyAuth.setActiveAccount(body.id || body.email);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/accounts/delete') {
+        try {
+          const body = await readJsonBody(req);
+          agyAuth.removeAccount(body.id || body.email);
+          const auth = await agyAuth.getAuthStatus();
+          return sendJson(res, 200, { ok: true, auth });
+        } catch (err) {
+          return sendJson(res, 400, { ok: false, error: err.message });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/config') {
+        const body = await readJsonBody(req);
+        {
+          const aiConfigPath = HUB_AI_CONFIG_PATH;
+          let existingConfig = {};
+          if (fs.existsSync(aiConfigPath)) {
+            try {
+              existingConfig = JSON.parse(fs.readFileSync(aiConfigPath, 'utf8')) || {};
+            } catch (e) {}
+          }
+          const existingRawKeys = extractRawApiKeys(existingConfig);
+
+          let resolvedKeys = existingRawKeys;
+          if (Array.isArray(body.apiKeys)) {
+            const nextKeys = [];
+            const seen = new Set();
+            for (const rawItem of body.apiKeys) {
+              const item = typeof rawItem === 'string' ? rawItem.trim() : '';
+              if (!item) continue;
+              let resolved = item;
+              if (item.includes('••••••') || item === '••••••••') {
+                const matched = existingRawKeys.find((k) => maskApiKey(k) === item);
+                if (matched) {
+                  resolved = matched;
+                } else if (item === '••••••••' && existingRawKeys.length > 0) {
+                  resolved = existingRawKeys[0];
+                } else {
+                  continue;
+                }
+              }
+              if (!seen.has(resolved)) {
+                seen.add(resolved);
+                nextKeys.push(resolved);
+              }
+            }
+            resolvedKeys = nextKeys;
+          } else if (typeof body.apiKey === 'string') {
+            const trimmedKey = body.apiKey.trim();
+            if (!trimmedKey) {
+              resolvedKeys = [];
+            } else if (trimmedKey.includes('••••••') || trimmedKey === '••••••••') {
+              const matched = existingRawKeys.find((k) => maskApiKey(k) === trimmedKey);
+              resolvedKeys = matched ? [matched] : existingRawKeys;
+            } else {
+              resolvedKeys = [trimmedKey];
+            }
+          }
+
+          const resolvedModels = (Array.isArray(body.models) && body.models.length > 0)
+            ? body.models.map((m) => String(m || '').trim()).filter(Boolean)
+            : (Array.isArray(existingConfig.models) && existingConfig.models.length > 0
+                ? existingConfig.models
+                : DEFAULT_FLASH_MODELS);
+
+          const nextConfig = Object.assign({}, existingConfig, body, {
+            apiKeys: resolvedKeys,
+            apiKey: resolvedKeys[0] || '',
+            models: resolvedModels.length > 0 ? resolvedModels : DEFAULT_FLASH_MODELS
+          });
+          delete nextConfig.apiKeysMasked;
+          delete nextConfig.apiKeyCount;
+          delete nextConfig.hasApiKey;
+          delete nextConfig.defaultModels;
+
+          fs.mkdirSync(path.dirname(aiConfigPath), { recursive: true });
+          fs.writeFileSync(aiConfigPath, JSON.stringify(nextConfig, null, 2), 'utf8');
+          return sendJson(res, 200, { ok: true, config: sanitizeAiConfigResponse(nextConfig) });
+        }
+      }
+
+      if (req.method === 'POST' && pathname === '/api/v1/ai/run-profile') {
+        const body = await readJsonBody(req);
+        const profileId = body.profileId || body.id;
+        if (!profileId) return sendJson(res, 400, { ok: false, error: 'Missing profileId' });
+
+        const accountsPath = FB_ACCOUNTS_PATH;
+        let accounts = [];
+        if (fs.existsSync(accountsPath)) {
+          try { accounts = JSON.parse(fs.readFileSync(accountsPath, 'utf8')); } catch (e) {}
+        }
+        const acc = accounts.find(a => a.profileId === profileId) || accounts[0];
+        if (!acc) return sendJson(res, 400, { ok: false, error: 'Chưa có cấu hình tài khoản cho profile này' });
+
+        try {
+          const { FacebookRunner } = require('../../automation/scenarios/facebook_runner');
+          const runner = new FacebookRunner(Object.assign({}, acc, { profileId }));
+          runner.runSession({ headless: false, allowComment: body.allowComment !== false })
+            .catch(e => process.stderr.write('[AI Run Error]: ' + e.message + '\n'));
+
+          return sendJson(res, 200, { ok: true, message: `Đã kích hoạt AI trên Profile ${profileId}` });
+        } catch (err) {
+          return sendJson(res, 500, { ok: false, error: err.message });
         }
       }
 
@@ -866,6 +1347,16 @@ function createApiServer({ db, browserManager, uiDir, aiClient: injectedAiClient
       }
     }
   });
+
+  const origClose = server.close.bind(server);
+  server.close = (cb) => {
+    cleanupSse();
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
+    return origClose(cb);
+  };
+  server.on('close', cleanupSse);
 
   return server;
 }

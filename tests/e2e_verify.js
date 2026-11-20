@@ -133,9 +133,54 @@ async function runTests() {
   });
 
   try {
+    assert.strictEqual(app.db.listProfiles().length, 0, 'Fresh DB must start empty without auto-seeded showcase profiles');
+
+    // Create 2 deterministic test fixture profiles (with autoGeoIp: false so local network IP does not override timezones)
+    app.db.createProfile({
+      id: 'vnt_macos_m3',
+      name: 'MacBook Pro M3 Max (Tokyo)',
+      groupName: 'Workstation',
+      autoGeoIp: false,
+      startUrl: 'about:blank',
+      fingerprintOverrides: {
+        blueprintId: 'mac_apple_m3_max',
+        hardwareConcurrency: '14',
+        deviceMemory: '32',
+        screenSize: '2560,1440',
+        timeZone: 'Asia/Tokyo',
+        langs: 'ja-JP,ja,en-US,en',
+        acceptLang: 'ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7',
+        canvasMark: '581920',
+        webglMark: '31',
+        audioFp: '19',
+        clientRectFp: '42'
+      }
+    });
+
+    app.db.createProfile({
+      id: 'vnt_win11_rtx4090',
+      name: 'Windows 11 RTX 4090 (New York)',
+      groupName: 'Ads US',
+      autoGeoIp: false,
+      startUrl: 'about:blank',
+      fingerprintOverrides: {
+        blueprintId: 'win_nvidia_rtx4090',
+        hardwareConcurrency: '16',
+        deviceMemory: '64',
+        screenSize: '1920,1080',
+        timeZone: 'America/New_York',
+        langs: 'en-US,en',
+        acceptLang: 'en-US,en;q=0.9',
+        canvasMark: '894123',
+        webglMark: '64',
+        audioFp: '53',
+        clientRectFp: '77'
+      }
+    });
+
     const listRes = await fetch(`${app.url}/api/v1/profiles`).then((r) => r.json());
-    assert(listRes.ok && listRes.profiles.length === 2, 'Expected 2 seeded profiles');
-    console.log(`  [PASS] Server listening at ${app.url} with ${listRes.profiles.length} seeded profiles.`);
+    assert(listRes.ok && listRes.profiles.length === 2, 'Expected 2 fixture profiles');
+    console.log(`  [PASS] Server listening at ${app.url} (fresh DB empty; ${listRes.profiles.length} fixture profiles loaded).`);
 
     // Test directory traversal prevention
     await assert.rejects(
@@ -881,12 +926,12 @@ async function runTests() {
 
     try {
       // 8.1 AI Config save + secret masking + key retention when saving without apiKey
-      const initAiCfg = await fetch(`${aiBaseUrl}/api/v1/ai/config`).then((r) => r.json());
+      const initAiCfg = await fetch(`${aiBaseUrl}/api/v1/ai/provider-config`).then((r) => r.json());
       assert.strictEqual(initAiCfg.ok, true);
       assert.strictEqual(initAiCfg.config.hasApiKey, false);
       assert.strictEqual(initAiCfg.config.apiKey, undefined, 'Must never expose raw apiKey');
 
-      const saveAiCfg1 = await postJson(aiBaseUrl, '/api/v1/ai/config', {
+      const saveAiCfg1 = await postJson(aiBaseUrl, '/api/v1/ai/provider-config', {
         provider: 'gemini',
         model: 'gemini-2.5-flash',
         apiKey: 'AIzaSyTestSecretKey123456789',
@@ -898,7 +943,7 @@ async function runTests() {
       assert(saveAiCfg1.config.apiKeyPreview.startsWith('AIza') && saveAiCfg1.config.apiKeyPreview.endsWith('6789'), 'apiKeyPreview must be masked');
 
       // Update model without apiKey -> must retain previous apiKey
-      const saveAiCfg2 = await postJson(aiBaseUrl, '/api/v1/ai/config', {
+      const saveAiCfg2 = await postJson(aiBaseUrl, '/api/v1/ai/provider-config', {
         provider: 'gemini',
         model: 'gemini-2.5-pro',
         enabled: false

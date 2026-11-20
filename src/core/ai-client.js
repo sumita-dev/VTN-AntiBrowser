@@ -8,7 +8,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { DATA_DIR } = require('./paths');
 
-const DEFAULT_AI_CONFIG_PATH = path.join(DATA_DIR, 'ai_config.json');
+// AI Studio provider config is kept separate from the AGY/Facebook AI Hub config (`ai_config.json`)
+const DEFAULT_AI_CONFIG_PATH = path.join(DATA_DIR, 'ai_provider_config.json');
 const DEFAULT_TIMEOUT_MS = 45000;
 
 const PROVIDER_DEFAULTS = {

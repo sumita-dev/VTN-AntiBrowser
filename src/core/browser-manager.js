@@ -6,6 +6,7 @@
  */
 
 const { spawn } = require('child_process');
+const { EventEmitter } = require('events');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -15,7 +16,8 @@ const {
   getFreeLocalPort,
   normalizeProxyConfig,
   startProxyTunnel,
-  resolveGeoIp
+  resolveGeoIp,
+  resolveDirectGeoIpCached
 } = require('./proxy-tunnel');
 const { BIN_DIR, DATA_DIR } = require('./paths');
 
@@ -44,11 +46,14 @@ function fetchCdpJson(port, endpoint = '/json/version', timeoutMs = 1500) {
 
 async function waitForCdpReady(port, maxWaitMs = 12000) {
   const start = Date.now();
+  await new Promise((r) => setTimeout(r, 150));
   let candidate = null;
   while (Date.now() - start < maxWaitMs) {
     try {
-      const versionInfo = await fetchCdpJson(port, '/json/version', 1000);
-      const targets = await fetchCdpJson(port, '/json', 1000);
+      const [versionInfo, targets] = await Promise.all([
+        fetchCdpJson(port, '/json/version', 250),
+        fetchCdpJson(port, '/json', 250)
+      ]);
       const pageTarget = Array.isArray(targets) ? targets.find((t) => t.type === 'page') : null;
       if (versionInfo && versionInfo.webSocketDebuggerUrl) {
         candidate = {
@@ -57,22 +62,23 @@ async function waitForCdpReady(port, maxWaitMs = 12000) {
           browserVersion: versionInfo.Browser,
           userAgent: versionInfo['User-Agent']
         };
-        // If page target is also ready, or after 1.5s grace period, return immediately
-        if (candidate.pageWsEndpoint || (Date.now() - start > 1500)) {
+        // If page target is also ready, or after 500ms grace period, return immediately
+        if (candidate.pageWsEndpoint || (Date.now() - start > 500)) {
           return candidate;
         }
       }
     } catch {
       // Wait and retry
     }
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 50));
   }
   if (candidate) return candidate;
   throw new Error(`Timed out waiting for Chrome CDP on port ${port}`);
 }
 
-class BrowserManager {
+class BrowserManager extends EventEmitter {
   constructor(options = {}) {
+    super();
     this.chromeExe = options.chromeExe || DEFAULT_CHROME_EXE;
     this.profilesDir = options.profilesDir || DEFAULT_PROFILES_DIR;
     this.db = options.db || null;
@@ -81,6 +87,8 @@ class BrowserManager {
     this.activeSessions = new Map();
     /** @type {Map<string, Promise<void>>} */
     this._syncingPromises = new Map();
+    /** @type {Map<string, Promise<Object>>} */
+    this._pendingLaunches = new Map();
     fs.mkdirSync(this.profilesDir, { recursive: true });
   }
 
@@ -114,6 +122,67 @@ class BrowserManager {
     return syncPromise;
   }
 
+  _emitProfileState(profileId, state, session = null) {
+    const id = String(profileId);
+    const payload = {
+      profileId: id,
+      state,
+      activeSession: session
+        ? {
+            profileId: id,
+            pid: session.chromeProcess ? session.chromeProcess.pid : null,
+            debuggingPort: session.debuggingPort,
+            browserWsEndpoint: session.browserWsEndpoint,
+            pageWsEndpoint: session.pageWsEndpoint,
+            proxyPort: session.proxyTunnel ? session.proxyTunnel.localPort : null,
+            startedAt: session.startedAt,
+            geoInfo: session.geoInfo || null,
+            closing: Boolean(session.closing || state === 'closing')
+          }
+        : null,
+      timestamp: Date.now()
+    };
+    this.emit('profile:state', payload);
+  }
+
+  _closeCdpWatcher(sessionRecord) {
+    if (!sessionRecord || !sessionRecord._cdpWatcher) return;
+    const ws = sessionRecord._cdpWatcher;
+    sessionRecord._cdpWatcher = null;
+    try {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    } catch {}
+  }
+
+  _attachCdpCloseWatcher(profileId, sessionRecord) {
+    if (typeof WebSocket !== 'function' || !sessionRecord.browserWsEndpoint) return;
+    try {
+      const ws = new WebSocket(sessionRecord.browserWsEndpoint);
+      let hasOpened = false;
+      sessionRecord._cdpWatcher = ws;
+      ws.addEventListener('open', () => {
+        hasOpened = true;
+      });
+      ws.addEventListener('close', () => {
+        if (sessionRecord._cdpWatcher !== ws) return;
+        sessionRecord._cdpWatcher = null;
+        if (
+          hasOpened &&
+          this.activeSessions.get(profileId) === sessionRecord &&
+          !sessionRecord.closing &&
+          !sessionRecord._cleanedUp &&
+          (!sessionRecord.chromeProcess || sessionRecord.chromeProcess.exitCode === null)
+        ) {
+          sessionRecord.closing = true;
+          this._emitProfileState(profileId, 'closing', sessionRecord);
+        }
+      });
+      ws.addEventListener('error', () => {});
+    } catch {}
+  }
+
   /**
    * Lists all currently running profile sessions.
    */
@@ -128,7 +197,8 @@ class BrowserManager {
         pageWsEndpoint: sess.pageWsEndpoint,
         proxyPort: sess.proxyTunnel ? sess.proxyTunnel.localPort : null,
         startedAt: sess.startedAt,
-        geoInfo: sess.geoInfo || null
+        geoInfo: sess.geoInfo || null,
+        closing: Boolean(sess.closing)
       });
     }
     return list;
@@ -176,6 +246,10 @@ class BrowserManager {
     }
 
     const profileId = String(profile.id);
+    if (this._pendingLaunches.has(profileId)) {
+      return await this._pendingLaunches.get(profileId);
+    }
+
     if (this.activeSessions.has(profileId)) {
       const existing = this.activeSessions.get(profileId);
       if (existing.chromeProcess && existing.chromeProcess.exitCode !== null) {
@@ -193,160 +267,199 @@ class BrowserManager {
       }
     }
 
-    if (!fs.existsSync(this.chromeExe)) {
-      throw new Error(`Chromium 151 kernel executable not found at: ${this.chromeExe}`);
-    }
+    const launchPromise = (async () => {
+      if (!fs.existsSync(this.chromeExe)) {
+        throw new Error(`Chromium 151 kernel executable not found at: ${this.chromeExe}`);
+      }
 
-    const userDataDir = launchOpts.userDataDir || path.join(this.profilesDir, profileId);
-    fs.mkdirSync(userDataDir, { recursive: true });
+      const userDataDir = launchOpts.userDataDir || path.join(this.profilesDir, profileId);
+      fs.mkdirSync(userDataDir, { recursive: true });
 
-    // 0. Cloud Sync: Distributed Lock check and auto-download latest profile data from R2
-    if (this.cloudSync && this.cloudSync.isEnabled() && !launchOpts.skipCloudSync) {
-      await this.cloudSync.acquireLock(profileId);
-      try {
-        await this.cloudSync.downloadProfileData(profileId, this.db, this.profilesDir);
-        if (this.db) {
-          const fresh = this.db.getProfile(profileId);
-          if (fresh) profile = fresh;
+      // 0. Cloud Sync: Distributed Lock check and auto-download latest profile data from R2
+      if (this.cloudSync && this.cloudSync.isEnabled() && !launchOpts.skipCloudSync) {
+        await this.cloudSync.acquireLock(profileId);
+        try {
+          await this.cloudSync.downloadProfileData(profileId, this.db, this.profilesDir);
+          if (this.db) {
+            const fresh = this.db.getProfile(profileId);
+            if (fresh) profile = fresh;
+          }
+        } catch (err) {
+          console.error(`[BrowserManager] Cloud download warning for ${profileId}:`, err.message);
         }
+      }
+
+      // 1. Setup Proxy Tunnel if proxy is configured
+      let proxyTunnel = null;
+      let chromeProxyServer = null;
+      const normProxy = normalizeProxyConfig(launchOpts.proxyConfig || profile.proxyConfig);
+      if (normProxy) {
+        proxyTunnel = await startProxyTunnel(normProxy);
+        chromeProxyServer = proxyTunnel.chromeProxyArg;
+      }
+
+      let chromeProcess;
+      let debuggingPort;
+      let geoInfo = null;
+      let warnings = [];
+      let healedFingerprint = null;
+      let paths = null;
+
+      try {
+        // 2. Clone fingerprint and optionally synchronize GeoIP (TimeZone, PublicIP, WebRTCAddress, Geoposition)
+        const fp = JSON.parse(JSON.stringify(profile.fingerprint || {}));
+        const shouldAutoGeo = launchOpts.autoGeoIp !== undefined ? launchOpts.autoGeoIp : Boolean(profile.autoGeoIp);
+        const geoWarnings = [];
+
+        if (shouldAutoGeo) {
+          geoInfo = await (proxyTunnel ? resolveGeoIp(proxyTunnel.localPort, 2500) : resolveDirectGeoIpCached(2000));
+          if (geoInfo && geoInfo.ok) {
+            if (!fp.switches) fp.switches = {};
+            if (!fp.dynamicConfig) fp.dynamicConfig = {};
+            fp.switches.TimeZone = geoInfo.timeZone;
+            fp.switches.Langs = geoInfo.langs;
+            fp.switches.AcceptLang = geoInfo.acceptLang;
+            fp.dynamicConfig.TimeZone = geoInfo.timeZone;
+            fp.dynamicConfig.PublicIP = geoInfo.ip;
+            fp.dynamicConfig.WebRTCAddress = geoInfo.ip;
+            fp.dynamicConfig.Geoposition = geoInfo.geoposition || '';
+
+            try {
+              this.db.updateProfile(profileId, {
+                fingerprintOverrides: {
+                  timeZone: geoInfo.timeZone,
+                  langs: geoInfo.langs,
+                  acceptLang: geoInfo.acceptLang,
+                  publicIp: geoInfo.ip,
+                  webRtcAddress: geoInfo.ip,
+                  geoposition: geoInfo.geoposition || ''
+                }
+              });
+            } catch {}
+          } else {
+            geoWarnings.push(
+              `Cảnh báo Auto GeoIP: Không thể phân giải IP/Timezone thực tế (${(geoInfo && geoInfo.error) || 'Lỗi kết nối'}). Trình duyệt vẫn mở với cấu hình hiện tại.`
+            );
+          }
+        }
+
+        // 3. Write Cookies import file if profile has cookies
+        let cookiesFile = null;
+        if (Array.isArray(profile.cookies) && profile.cookies.length > 0) {
+          cookiesFile = path.join(userDataDir, 'ImportCookies.json');
+          fs.writeFileSync(cookiesFile, JSON.stringify(profile.cookies, null, 2), 'utf8');
+        }
+
+        // 4. Allocate free CDP debugging port AFTER geoPromise resolves, right before buildProfileLaunchArtifacts
+        debuggingPort = launchOpts.debuggingPort || (await getFreeLocalPort());
+
+        // 5. Build encrypted configs (`StaticConfig.enc`, `DynamicConfig.enc`, `WebGLFP.enc`) & CLI args
+        const startUrl = launchOpts.startUrl || profile.startUrl || 'about:blank';
+        const artifacts = buildProfileLaunchArtifacts({
+          userDataDir,
+          fingerprint: fp,
+          remoteDebuggingPort: debuggingPort,
+          proxyServer: chromeProxyServer,
+          headless: Boolean(launchOpts.headless),
+          startUrl,
+          cookiesFile
+        });
+        warnings = [...geoWarnings, ...(artifacts.warnings || [])];
+        healedFingerprint = artifacts.healedFingerprint;
+        paths = artifacts.paths;
+
+        // 6. Spawn `chrome.exe` with stdin ignored
+        chromeProcess = spawn(this.chromeExe, artifacts.args, {
+          stdio: ['ignore', 'ignore', 'ignore'],
+          detached: false,
+          windowsHide: Boolean(launchOpts.headless)
+        });
       } catch (err) {
-        console.error(`[BrowserManager] Cloud download warning for ${profileId}:`, err.message);
-      }
-    }
-
-    // 1. Setup Proxy Tunnel if proxy is configured
-    let proxyTunnel = null;
-    let chromeProxyServer = null;
-    const normProxy = normalizeProxyConfig(launchOpts.proxyConfig || profile.proxyConfig);
-    if (normProxy) {
-      proxyTunnel = await startProxyTunnel(normProxy);
-      chromeProxyServer = proxyTunnel.chromeProxyArg;
-    }
-
-    let chromeProcess;
-    let debuggingPort;
-    let geoInfo = null;
-    let warnings = [];
-    let healedFingerprint = null;
-    let paths = null;
-
-    try {
-      // 2. Clone fingerprint and optionally synchronize GeoIP (TimeZone, PublicIP, WebRTCAddress, Geoposition)
-      const fp = JSON.parse(JSON.stringify(profile.fingerprint || {}));
-      const shouldAutoGeo = launchOpts.autoGeoIp !== undefined ? launchOpts.autoGeoIp : Boolean(profile.autoGeoIp);
-
-      if (shouldAutoGeo) {
-        geoInfo = await resolveGeoIp(proxyTunnel ? proxyTunnel.localPort : null, 5000);
-        if (geoInfo && geoInfo.ok) {
-          if (!fp.switches) fp.switches = {};
-          if (!fp.dynamicConfig) fp.dynamicConfig = {};
-          fp.switches.TimeZone = geoInfo.timeZone;
-          fp.switches.Langs = geoInfo.langs;
-          fp.switches.AcceptLang = geoInfo.acceptLang;
-          fp.dynamicConfig.TimeZone = geoInfo.timeZone;
-          fp.dynamicConfig.PublicIP = geoInfo.ip;
-          fp.dynamicConfig.WebRTCAddress = geoInfo.ip;
-          fp.dynamicConfig.Geoposition = geoInfo.geoposition;
+        if (proxyTunnel && proxyTunnel.process) {
+          try { proxyTunnel.process.kill(); } catch {}
         }
+        if (this.cloudSync && this.cloudSync.isEnabled()) {
+          try { await this.cloudSync.releaseLock(profileId); } catch {}
+        }
+        throw err;
       }
 
-      // 3. Write Cookies import file if profile has cookies
-      let cookiesFile = null;
-      if (Array.isArray(profile.cookies) && profile.cookies.length > 0) {
-        cookiesFile = path.join(userDataDir, 'ImportCookies.json');
-        fs.writeFileSync(cookiesFile, JSON.stringify(profile.cookies, null, 2), 'utf8');
-      }
-
-      // 4. Allocate free CDP debugging port
-      debuggingPort = launchOpts.debuggingPort || (await getFreeLocalPort());
-
-      // 5. Build encrypted configs (`StaticConfig.enc`, `DynamicConfig.enc`, `WebGLFP.enc`) & CLI args
-      const startUrl = launchOpts.startUrl || profile.startUrl || 'about:blank';
-      const artifacts = buildProfileLaunchArtifacts({
+      const sessionRecord = {
+        profileId,
         userDataDir,
-        fingerprint: fp,
-        remoteDebuggingPort: debuggingPort,
-        proxyServer: chromeProxyServer,
-        headless: Boolean(launchOpts.headless),
-        startUrl,
-        cookiesFile
-      });
-      warnings = artifacts.warnings;
-      healedFingerprint = artifacts.healedFingerprint;
-      paths = artifacts.paths;
+        chromeProcess,
+        proxyTunnel,
+        debuggingPort,
+        browserWsEndpoint: null,
+        pageWsEndpoint: null,
+        startedAt: new Date().toISOString(),
+        geoInfo,
+        warnings,
+        closing: false,
+        _cleanedUp: false,
+        _cdpWatcher: null
+      };
 
-      // 6. Spawn `chrome.exe` with stdin ignored
-      chromeProcess = spawn(this.chromeExe, artifacts.args, {
-        stdio: ['ignore', 'ignore', 'ignore'],
-        detached: false,
-        windowsHide: Boolean(launchOpts.headless)
-      });
-    } catch (err) {
-      if (proxyTunnel && proxyTunnel.process) {
-        try { proxyTunnel.process.kill(); } catch {}
-      }
-      if (this.cloudSync && this.cloudSync.isEnabled()) {
-        try { await this.cloudSync.releaseLock(profileId); } catch {}
-      }
-      throw err;
-    }
+      this.activeSessions.set(profileId, sessionRecord);
 
-    const sessionRecord = {
-      profileId,
-      userDataDir,
-      chromeProcess,
-      proxyTunnel,
-      debuggingPort,
-      browserWsEndpoint: null,
-      pageWsEndpoint: null,
-      startedAt: new Date().toISOString(),
-      geoInfo,
-      warnings
-    };
+      // Ensure automatic cleanup of GOST proxy tunnel and cloud sync when Chrome exits or errors
+      const cleanup = () => {
+        if (sessionRecord._cleanedUp) return;
+        sessionRecord._cleanedUp = true;
+        this._closeCdpWatcher(sessionRecord);
+        if (proxyTunnel && proxyTunnel.process) {
+          try { proxyTunnel.process.kill(); } catch {}
+        }
+        if (this.activeSessions.get(profileId) === sessionRecord) {
+          this.activeSessions.delete(profileId);
+        }
+        this._emitProfileState(profileId, 'stopped', null);
+        this._syncAndReleaseLock(profileId).catch(() => {});
+      };
+      chromeProcess.once('exit', cleanup);
+      chromeProcess.on('error', cleanup);
 
-    this.activeSessions.set(profileId, sessionRecord);
-
-    // Ensure automatic cleanup of GOST proxy tunnel and cloud sync when Chrome exits or errors
-    const cleanup = () => {
-      if (proxyTunnel && proxyTunnel.process) {
-        try { proxyTunnel.process.kill(); } catch {}
-      }
-      this.activeSessions.delete(profileId);
-      this._syncAndReleaseLock(profileId).catch(() => {});
-    };
-    chromeProcess.once('exit', cleanup);
-    chromeProcess.on('error', cleanup);
-
-    // 7. Wait for CDP readiness
-    try {
-      const cdpInfo = await waitForCdpReady(debuggingPort, 12000);
-      sessionRecord.browserWsEndpoint = cdpInfo.browserWsEndpoint;
-      sessionRecord.pageWsEndpoint = cdpInfo.pageWsEndpoint;
-    } catch (err) {
-      // Kill process if CDP failed to initialize
-      await this.closeProfile(profileId);
-      throw err;
-    }
-
-    if (this.db) {
+      // 7. Wait for CDP readiness
       try {
-        this.db.markOpened(profileId);
-      } catch {}
-    }
+        const cdpInfo = await waitForCdpReady(debuggingPort, 12000);
+        sessionRecord.browserWsEndpoint = cdpInfo.browserWsEndpoint;
+        sessionRecord.pageWsEndpoint = cdpInfo.pageWsEndpoint;
+      } catch (err) {
+        // Kill process if CDP failed to initialize
+        await this.closeProfile(profileId);
+        throw err;
+      }
 
-    return {
-      alreadyRunning: false,
-      profileId,
-      pid: chromeProcess.pid,
-      debuggingPort,
-      browserWsEndpoint: sessionRecord.browserWsEndpoint,
-      pageWsEndpoint: sessionRecord.pageWsEndpoint,
-      userDataDir,
-      warnings,
-      geoInfo,
-      configPaths: paths,
-      appliedFingerprint: healedFingerprint
-    };
+      this._attachCdpCloseWatcher(profileId, sessionRecord);
+      this._emitProfileState(profileId, 'running', sessionRecord);
+
+      if (this.db) {
+        try {
+          this.db.markOpened(profileId);
+        } catch {}
+      }
+
+      return {
+        alreadyRunning: false,
+        profileId,
+        pid: chromeProcess.pid,
+        debuggingPort,
+        browserWsEndpoint: sessionRecord.browserWsEndpoint,
+        pageWsEndpoint: sessionRecord.pageWsEndpoint,
+        userDataDir,
+        warnings,
+        geoInfo,
+        configPaths: paths,
+        appliedFingerprint: healedFingerprint
+      };
+    })();
+
+    this._pendingLaunches.set(profileId, launchPromise);
+    try {
+      return await launchPromise;
+    } finally {
+      this._pendingLaunches.delete(profileId);
+    }
   }
 
   /**
@@ -360,6 +473,12 @@ class BrowserManager {
     const id = String(profileId);
     const sess = this.activeSessions.get(id);
     if (!sess) return false;
+
+    if (!sess.closing) {
+      sess.closing = true;
+      this._emitProfileState(id, 'closing', sess);
+    }
+    this._closeCdpWatcher(sess);
 
     if (sess.proxyTunnel && sess.proxyTunnel.process) {
       try { sess.proxyTunnel.process.kill(); } catch {}
@@ -380,7 +499,13 @@ class BrowserManager {
         }
       });
     }
-    this.activeSessions.delete(id);
+    if (!sess._cleanedUp) {
+      sess._cleanedUp = true;
+      if (this.activeSessions.get(id) === sess) {
+        this.activeSessions.delete(id);
+      }
+      this._emitProfileState(id, 'stopped', null);
+    }
     await this._syncAndReleaseLock(id);
     return true;
   }

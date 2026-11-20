@@ -9,9 +9,10 @@
     "build:exe": "node scripts/build-exe.js",
     "cloud:upload-kernel": "node scripts/upload-kernel.js",
     "cloud:upload-app": "node scripts/upload-app.js",
+    "build:portable": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1",
     "test": "node tests/e2e_verify.js"
   },
-  "engine": {
+  "engines": {
     "node": ">=22.0.0"
   }
 }
