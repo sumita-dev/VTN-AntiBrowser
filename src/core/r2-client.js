@@ -7,8 +7,9 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const { DATA_DIR } = require('./paths');
 
-const DEFAULT_R2_CONFIG_PATH = path.resolve(__dirname, '..', '..', 'data', 'r2_config.json');
+const DEFAULT_R2_CONFIG_PATH = path.join(DATA_DIR, 'r2_config.json');
 
 function hmac(key, data) {
   return crypto.createHmac('sha256', key).update(data).digest();

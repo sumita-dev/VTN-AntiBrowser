@@ -368,6 +368,402 @@
       overflow-x: auto;
       color: #a7f3d0;
     }
+    .ai-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .ai-tab-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .ai-tab-btn:hover {
+      color: var(--text-main);
+      border-color: var(--accent-border);
+    }
+    .ai-tab-btn.active {
+      background: rgba(255, 107, 0, 0.16);
+      border-color: var(--accent);
+      color: #ff9f43;
+    }
+    .ai-panel { display: none; }
+    .ai-panel.active { display: block; }
+    .hint-card {
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .hint-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #60a5fa;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .hint-steps {
+      margin: 8px 0 10px 18px;
+      font-size: 12px;
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+    .hint-examples {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .hint-example-chip {
+      text-align: left;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px dashed rgba(96, 165, 250, 0.4);
+      color: #cbd5e1;
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      cursor: pointer;
+      line-height: 1.45;
+      transition: all 0.15s ease;
+    }
+    .hint-example-chip:hover {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: #60a5fa;
+      color: #ffffff;
+    }
+    .mcp-code-box {
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: #a7f3d0;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.5;
+      margin: 8px 0;
+    }
+    .mcp-guide-details {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      margin-bottom: 14px;
+    }
+    .mcp-guide-summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #e2e8f0;
+      user-select: none;
+    }
+    .mcp-guide-summary::-webkit-details-marker { display: none; }
+    .mcp-guide-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+    .mcp-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .mcp-filter-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .mcp-filter-btn:hover {
+      border-color: rgba(96, 165, 250, 0.5);
+      color: #e2e8f0;
+    }
+    .mcp-filter-btn.active {
+      background: rgba(59, 130, 246, 0.22);
+      border-color: #60a5fa;
+      color: #ffffff;
+    }
+    .mcp-search-input {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      min-width: 220px;
+      flex: 1 1 220px;
+      max-width: 320px;
+      outline: none;
+    }
+    .mcp-search-input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+    }
+    .mcp-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+      gap: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+      margin-top: 8px;
+      padding-right: 2px;
+    }
+    .mcp-tool-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .mcp-tool-item:hover {
+      border-color: rgba(96, 165, 250, 0.45);
+      background: rgba(59, 130, 246, 0.06);
+    }
+    .mcp-tool-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .mcp-tool-name {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ff9f43;
+      word-break: break-word;
+    }
+    .mcp-tool-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 999px;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+    .mcp-badge-profile { background: rgba(59, 130, 246, 0.16); color: #93c5fd; border-color: rgba(59, 130, 246, 0.35); }
+    .mcp-badge-cloud { background: rgba(16, 185, 129, 0.16); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.35); }
+    .mcp-badge-cdp { background: rgba(245, 158, 11, 0.16); color: #fcd34d; border-color: rgba(245, 158, 11, 0.35); }
+    .mcp-badge-cookie { background: rgba(236, 72, 153, 0.16); color: #f9a8d4; border-color: rgba(236, 72, 153, 0.35); }
+    .mcp-badge-ai { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4); }
+    .mcp-tool-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .mcp-tool-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-top: auto;
+      padding-top: 4px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.07);
+    }
+    .mcp-tool-params {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 10.5px;
+      color: #a7f3d0;
+      background: rgba(0, 0, 0, 0.32);
+      border: 1px solid rgba(167, 243, 208, 0.2);
+      border-radius: 5px;
+      padding: 2px 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 72%;
+    }
+    .mcp-tool-copy-btn {
+      background: rgba(59, 130, 246, 0.14);
+      border: 1px solid rgba(96, 165, 250, 0.38);
+      color: #bfdbfe;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .mcp-tool-copy-btn:hover {
+      background: rgba(59, 130, 246, 0.28);
+      border-color: #60a5fa;
+      color: #ffffff;
+    }
+    .btn-ai-studio {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.25));
+      border-color: rgba(139, 92, 246, 0.55);
+      color: #c4b5fd;
+      font-weight: 600;
+    }
+    .btn-ai-studio:hover {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(59, 130, 246, 0.4));
+      color: #ffffff;
+    }
+    .ai-provider-bar {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .ai-provider-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      cursor: pointer;
+      user-select: none;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .ai-provider-header:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .ai-provider-body {
+      display: none;
+      padding: 12px 14px 14px;
+      border-top: 1px solid var(--border);
+    }
+    .ai-provider-body.open {
+      display: block;
+    }
+    .ai-section-box {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .ai-checklist {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .ai-check-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--text-main);
+      padding: 4px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .ai-check-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .ai-check-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      padding: 0;
+      cursor: pointer;
+    }
+    .ai-score-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .ai-score-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+    }
+    .sev-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .sev-critical { background: rgba(239, 68, 68, 0.22); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); }
+    .sev-high { background: rgba(249, 115, 22, 0.22); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.45); }
+    .sev-medium { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .sev-low { background: rgba(59, 130, 246, 0.18); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .sev-info { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.35); }
+    .ai-finding-item {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .ai-mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .ai-mini-table th, .ai-mini-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .ai-mini-table th {
+      background: rgba(31, 41, 55, 0.65);
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    .ai-log-box {
+      background: #070a12;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      color: #cbd5e1;
+      max-height: 160px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -425,6 +821,8 @@
     <div class="header-actions">
       <span class="status-pill" id="kernelStatus">● Kernel 151 Ready</span>
       <span class="status-pill" id="cloudStatusPill" style="background: rgba(59, 130, 246, 0.12); border-color: rgba(59, 130, 246, 0.35); color: #60a5fa;">☁️ R2: Đang kết nối...</span>
+      <span class="status-pill" id="updateAvailablePill" onclick="openR2ConfigModal()" title="Có bản cập nhật mới trên Cloudflare R2 — bấm để cập nhật 1-Click" style="display: none; cursor: pointer; background: rgba(16, 185, 129, 0.16); border-color: rgba(16, 185, 129, 0.45); color: #34d399; font-weight: 700;">🚀 Có bản mới!</span>
+      <button class="btn btn-ai-studio" id="btnAiStudio" onclick="openAiStudioModal('mcp')" title="Kết nối Antigravity 2.0 qua MCP Server và các công cụ AI">✨ AI Studio (MCP)</button>
       <button class="btn" id="btnCloudConfig" onclick="openR2ConfigModal()" title="Cài đặt thông số kết nối Cloudflare R2">⚙️ Cấu hình R2</button>
       <button class="btn" id="btnCloudSync" onclick="syncAllCloud()" title="Đồng bộ tất cả Profile từ Cloudflare R2">☁️ Đồng bộ Cloud (R2)</button>
       <button class="btn" onclick="loadProfiles()">↻ Làm mới</button>
@@ -578,6 +976,7 @@
         <pre class="probe-box" id="probeOutput">Đang truy vấn CDP Runtime.evaluate...</pre>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-ai-studio" type="button" id="btnProbeToAuditor" onclick="openAuditorFromProbe()">🛡️ Phân tích bằng AI Auditor</button>
         <button class="btn" onclick="document.getElementById('probeModal').classList.remove('active')">Đóng</button>
       </div>
     </div>
@@ -688,11 +1087,439 @@
           </div>
         </div>
 
+        <!-- R2 1-Click App Auto-Updater -->
+        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 14px; margin-top: 14px;">
+          <div style="font-size: 13px; font-weight: 700; color: #34d399; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span>🚀 Cập nhật ứng dụng 1-Click (R2 Auto-Updater)</span>
+            <button class="btn btn-sm" type="button" id="btnCheckAppUpdate" onclick="checkAppUpdate(false)" style="font-size: 11px; padding: 2px 8px;">🔄 Kiểm tra bản mới</button>
+          </div>
+          <div style="font-size: 11.5px; color: var(--text-muted); background: rgba(0,0,0,0.22); border-left: 3px solid #34d399; padding: 7px 10px; border-radius: 6px; margin-bottom: 10px; line-height: 1.45;">
+            <strong>HINT:</strong> Máy Dev build <code>npm run build:exe</code> rồi bấm <strong>📤 Đẩy bản .exe lên R2</strong> (hoặc chạy <code>npm run cloud:upload-app</code>). Các máy khác bấm <strong>⬇️ Tải &amp; Cập nhật 1-Click</strong> — tự kiểm tra SHA-256, sao lưu <code>.old.exe</code> và hỗ trợ <strong>↩️ Khôi phục bản cũ</strong> bất cứ lúc nào.
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 10px;">
+            <div style="background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+              <span style="color: var(--text-muted);">Phiên bản hiện tại:</span><br />
+              <strong id="updaterCurrentVersion" style="color: var(--text-main);">Đang kiểm tra...</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+              <span style="color: var(--text-muted);">Bản mới nhất trên R2:</span><br />
+              <strong id="updaterLatestVersion" style="color: #94a3b8;">Đang kiểm tra...</strong>
+            </div>
+          </div>
+          <div id="updaterReleaseDetails" style="display: none; font-size: 11.5px; color: var(--text-muted); background: rgba(0,0,0,0.22); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-subtle); margin-bottom: 10px; line-height: 1.45; word-break: break-all;"></div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary" type="button" id="btnApplyAppUpdate" onclick="applyAppUpdate()" style="flex: 1; min-width: 170px; font-size: 12px; padding: 8px 12px;">⬇️ Tải &amp; Cập nhật 1-Click</button>
+            <button class="btn" type="button" id="btnRollbackAppUpdate" onclick="rollbackAppUpdate()" style="font-size: 12px; padding: 8px 12px;" disabled>↩️ Khôi phục bản cũ</button>
+            <button class="btn" type="button" id="btnPublishAppUpdate" onclick="publishAppUpdate()" style="font-size: 12px; padding: 8px 12px;">📤 Đẩy bản .exe lên R2</button>
+          </div>
+        </div>
+
         <div id="r2ConfigMsg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.4; margin-top: 14px;"></div>
       </div>
       <div class="modal-footer">
         <button class="btn" type="button" onclick="closeR2ConfigModal()">Hủy</button>
         <button class="btn btn-primary" type="button" id="btnSaveR2Config" onclick="saveR2Config()">Lưu &amp; Kiểm tra kết nối</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Studio Modal (6 AI Capabilities + HINTs) -->
+  <div class="modal-backdrop" id="aiStudioModal">
+    <div class="modal" style="max-width: 940px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 16px; font-weight: 700;">✨ VTN AI Studio</span>
+          <span class="status-pill" id="mcpStatusBadge" style="font-size: 11px;">● MCP 2025-03-26 Ready</span>
+          <span class="status-pill" id="aiProviderBadge" style="font-size: 11px; background: rgba(148, 163, 184, 0.14); border-color: rgba(148, 163, 184, 0.35); color: #94a3b8;">○ AI: Offline Fallback</span>
+        </div>
+        <button class="btn btn-sm" type="button" onclick="closeAiStudioModal()">✕</button>
+      </div>
+      <div class="modal-body" style="max-height: 78vh; overflow-y: auto;">
+        <!-- Collapsible AI Provider Config Bar -->
+        <div class="ai-provider-bar">
+          <div class="ai-provider-header" onclick="toggleAiProviderBar()">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;">
+              <span>⚙️ Cấu hình AI Provider (Gemini / OpenAI-Compatible / Ollama)</span>
+              <span id="aiProviderSummary" style="font-weight: 500; color: var(--text-muted);">Chưa cấu hình — các tính năng vẫn chạy Offline Fallback</span>
+            </div>
+            <span id="aiProviderChevron" style="font-size: 12px; color: var(--text-muted);">▼ Mở rộng</span>
+          </div>
+          <div class="ai-provider-body" id="aiProviderBody">
+            <div class="form-grid" style="margin-bottom: 10px;">
+              <div class="form-group">
+                <label>Nhà cung cấp (Provider)</label>
+                <select id="aiCfgProvider" onchange="onAiProviderSelectChange()">
+                  <option value="gemini">Google Gemini (gemini-2.5-flash)</option>
+                  <option value="openai">OpenAI / OpenRouter / DeepSeek / Groq</option>
+                  <option value="ollama">Ollama Local (Miễn phí, không cần Key)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Model</label>
+                <input type="text" id="aiCfgModel" placeholder="VD: gemini-2.5-flash" />
+              </div>
+              <div class="form-group">
+                <label>Base URL</label>
+                <input type="text" id="aiCfgBaseUrl" placeholder="https://generativelanguage.googleapis.com/v1beta" />
+              </div>
+              <div class="form-group">
+                <label>API Key (Bỏ trống nếu giữ nguyên hoặc dùng Ollama)</label>
+                <input type="password" id="aiCfgApiKey" placeholder="Nhập API Key..." autocomplete="new-password" />
+                <div id="aiCfgKeyHint" class="subtext" style="color: #34d399; display: none;"></div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-main);">
+                <input type="checkbox" id="aiCfgEnabled" style="width: 16px; height: 16px;" />
+                <span>Kích hoạt LLM nâng cao cho Auditor / Warmer / Workflow / Extractor / Matrix</span>
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-sm" type="button" id="btnTestAiConn" onclick="testAiProviderConnection()">⚡ Test Connection</button>
+                <button class="btn btn-sm btn-primary" type="button" id="btnSaveAiCfg" onclick="saveAiProviderConfig()">💾 Lưu cấu hình AI</button>
+              </div>
+            </div>
+            <div id="aiProviderMsg" style="display: none; margin-top: 10px; padding: 8px 10px; border-radius: 7px; font-size: 12px;"></div>
+          </div>
+        </div>
+
+        <div class="ai-tabs">
+          <button class="ai-tab-btn active" type="button" data-ai-tab="mcp" onclick="switchAiTab('mcp')">🔌 1. Antidetect MCP</button>
+          <button class="ai-tab-btn" type="button" data-ai-tab="auditor" onclick="switchAiTab('auditor')">🛡️ 2. AI Auditor</button>
+          <button class="ai-tab-btn" type="button" data-ai-tab="warmer" onclick="switchAiTab('warmer')">🔥 3. Account Warming</button>
+          <button class="ai-tab-btn" type="button" data-ai-tab="workflow" onclick="switchAiTab('workflow')">⚙️ 4. Self-Healing Flow</button>
+          <button class="ai-tab-btn" type="button" data-ai-tab="extractor" onclick="switchAiTab('extractor')">👁️ 5. Visual Extractor</button>
+          <button class="ai-tab-btn" type="button" data-ai-tab="matrix" onclick="switchAiTab('matrix')">🧩 6. Matrix Planner</button>
+        </div>
+
+        <!-- TAB 1: ANTIDETECT MCP SERVER -->
+        <div class="ai-panel active" id="aiPanel-mcp">
+          <div class="hint-card">
+            <div class="hint-card-title">
+              <span>💡 HINT — Kết nối Antigravity 2.0 vào VTN Anti-Browser qua MCP</span>
+              <span style="font-size: 11px; color: #34d399;">Không cần API Key • Zero-Dependency</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+              Chức năng này biến VTN Anti-Browser thành <strong>Antidetect MCP Server</strong> (chuẩn Streamable HTTP <code>2025-03-26</code>).
+              <strong>Antigravity 2.0</strong> có thể trực tiếp mở profile tàng hình, duyệt web, chụp ảnh màn hình, bấm/nhập liệu và kiểm tra vân tay C++.
+            </p>
+            <ol class="hint-steps">
+              <li>Mở file cấu hình MCP Global của Antigravity 2.0 tại: <code id="mcpAgyPath">~/.gemini/config/mcp_config.json</code></li>
+              <li>Chọn chế độ kết nối bên dưới (khuyên dùng <strong>Streamable HTTP</strong>), bấm <strong>📋 Copy JSON</strong> và dán vào mục <code>mcpServers</code>.</li>
+              <li>Mở Antigravity 2.0 → <em>Additional Options (...) &gt; MCP Servers</em> để xác nhận server <code>vtn-anti-browser</code> đã hiện <strong id="mcpHintToolCount">28 tools</strong>, rồi thử các câu lệnh mẫu bên dưới.</li>
+            </ol>
+            <div style="font-size: 11px; font-weight: 700; color: #93c5fd; margin-bottom: 4px;">📌 Ví dụ câu lệnh mẫu (bấm 1-click để copy dán vào Antigravity 2.0):</div>
+            <div class="hint-examples">
+              <button type="button" class="hint-example-chip" onclick="copyTextWithToast(this.dataset.prompt)" data-prompt="Dùng vtn-anti-browser liệt kê tất cả profile hiện có (vtn_list_profiles), tạo 1 profile mới tên 'Test_Agy_01' (vtn_create_unique_profile) rồi mở nó lên (vtn_open_profile) và chạy vtn_probe_fingerprint kiểm tra xem có bị lộ webdriver hay mất [native code] không.">
+                💬 <strong>1. Tạo, mở &amp; kiểm tra vân tay:</strong> "Dùng vtn-anti-browser liệt kê tất cả profile hiện có, tạo 1 profile mới tên 'Test_Agy_01' rồi mở nó lên và chạy vtn_probe_fingerprint kiểm tra xem có bị lộ webdriver hay mất [native code] không."
+              </button>
+              <button type="button" class="hint-example-chip" onclick="copyTextWithToast(this.dataset.prompt)" data-prompt="Mở profile đầu tiên trên vtn-anti-browser, điều hướng tới https://iphey.com (vtn_navigate), đợi 5 giây rồi chụp ảnh màn hình (vtn_screenshot) cho anh xem kết quả độ tin cậy vân tay.">
+                💬 <strong>2. Điều hướng, chờ tải &amp; chụp ảnh:</strong> "Mở profile đầu tiên trên vtn-anti-browser, điều hướng tới https://iphey.com, đợi 5 giây rồi chụp ảnh màn hình (vtn_screenshot) cho anh xem kết quả."
+              </button>
+              <button type="button" class="hint-example-chip" onclick="copyTextWithToast(this.dataset.prompt)" data-prompt="Trên profile đang mở, tạo tab mới tới https://example.com/form bằng vtn_new_tab, dùng vtn_wait_for_selector đợi form xuất hiện, gọi vtn_page_snapshot lấy selector rồi chọn dropdown bằng vtn_select_option và nhấn Enter bằng vtn_press_key.">
+                💬 <strong>3. Đa tab, Snapshot, Dropdown &amp; Bàn phím:</strong> "Trên profile đang mở, tạo tab mới bằng vtn_new_tab, đợi phần tử bằng vtn_wait_for_selector, lấy vtn_page_snapshot rồi chọn dropdown (vtn_select_option) và bấm Enter (vtn_press_key)."
+              </button>
+              <button type="button" class="hint-example-chip" onclick="copyTextWithToast(this.dataset.prompt)" data-prompt="Dùng vtn_get_cookies xuất toàn bộ cookie hiện tại của profile đang chạy (lọc theo domain chính), sau đó mở profile thứ 2 và nạp lại bộ cookie đó bằng vtn_set_cookies để giữ nguyên phiên đăng nhập.">
+                💬 <strong>4. Xuất &amp; nhập Cookie giữa các profile:</strong> "Dùng vtn_get_cookies xuất toàn bộ cookie của profile đang chạy, sau đó mở profile thứ 2 và nạp lại bộ cookie đó bằng vtn_set_cookies."
+              </button>
+              <button type="button" class="hint-example-chip" onclick="copyTextWithToast(this.dataset.prompt)" data-prompt="Dùng vtn_update_profile gắn proxy mới và bật autoGeoIp cho profile 'Test_Agy_01', sau đó chạy vtn_cloud_sync (action='upload') để đẩy lên Cloudflare R2, và nếu cần thì xóa profile rác bằng vtn_delete_profile.">
+                💬 <strong>5. Cập nhật/Xóa Profile &amp; đồng bộ Cloud R2:</strong> "Dùng vtn_update_profile gắn proxy &amp; bật autoGeoIp cho profile, rồi chạy vtn_cloud_sync đẩy lên Cloudflare R2 (hoặc xóa profile rác bằng vtn_delete_profile)."
+              </button>
+              <button type="button" class="hint-example-chip" onclick="copyTextWithToast(this.dataset.prompt)" data-prompt="Chạy vtn_audit_profile với autoFix=true cho profile đầu tiên theo ngữ cảnh 'Facebook / Meta', sau đó dùng vtn_plan_matrix lập kế hoạch 5 profile US chống trùng vân tay và bật nuôi nick thử bằng vtn_warming_control.">
+                💬 <strong>6. AI Studio qua MCP (Audit + Matrix + Warming):</strong> "Chạy vtn_audit_profile (autoFix=true), dùng vtn_plan_matrix lập kế hoạch 5 profile US chống trùng vân tay và điều khiển nuôi nick bằng vtn_warming_control."
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-sm btn-primary" type="button" id="btnMcpModeHttp" onclick="setMcpConfigMode('http')">🌐 Streamable HTTP (Khuyên dùng cho Antigravity 2.0)</button>
+              <button class="btn btn-sm" type="button" id="btnMcpModeStdio" onclick="setMcpConfigMode('stdio')">💻 Stdio Bridge (Local CLI)</button>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-sm btn-success" type="button" id="btnTestMcp" onclick="testMcpHandshake()">⚡ Test MCP Handshake</button>
+              <button class="btn btn-sm" type="button" onclick="copyCurrentMcpConfig()">📋 Copy JSON cho Antigravity 2.0</button>
+            </div>
+          </div>
+
+          <pre class="mcp-code-box" id="mcpConfigPreview">Đang tải cấu hình MCP...</pre>
+          <div id="mcpTestResult" style="display: none; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 12px;"></div>
+
+          <details open class="mcp-guide-details" id="mcpToolsGuideDetails">
+            <summary class="mcp-guide-summary">
+              <span>📖 Hướng dẫn nhanh 28 MCP Tools theo 5 nhóm (<span id="mcpToolCount">28</span>)</span>
+              <span style="font-size: 11px; font-weight: 500; color: var(--text-muted);" id="mcpStatsSummary">Lượt gọi: 0</span>
+            </summary>
+            <div class="mcp-guide-controls">
+              <div class="mcp-filter-bar" id="mcpGroupFilterBar">
+                <button type="button" class="mcp-filter-btn active" data-mcp-group="all" onclick="setMcpToolGroup('all')">Tất cả (28)</button>
+                <button type="button" class="mcp-filter-btn" data-mcp-group="profile" onclick="setMcpToolGroup('profile')">Profile &amp; Proxy</button>
+                <button type="button" class="mcp-filter-btn" data-mcp-group="cloud" onclick="setMcpToolGroup('cloud')">Vân tay &amp; Cloud R2</button>
+                <button type="button" class="mcp-filter-btn" data-mcp-group="cdp" onclick="setMcpToolGroup('cdp')">Trình duyệt CDP</button>
+                <button type="button" class="mcp-filter-btn" data-mcp-group="cookie" onclick="setMcpToolGroup('cookie')">Cookie</button>
+                <button type="button" class="mcp-filter-btn" data-mcp-group="ai" onclick="setMcpToolGroup('ai')">AI Studio</button>
+              </div>
+              <input type="search" id="mcpToolSearch" class="mcp-search-input" placeholder="🔍 Tìm tên tool hoặc chức năng..." oninput="renderMcpToolsList()">
+            </div>
+            <div class="mcp-tools-grid" id="mcpToolsList"></div>
+          </details>
+        </div>
+
+        <!-- TAB 2: AI AUDITOR (LIVE) -->
+        <div class="ai-panel" id="aiPanel-auditor">
+          <div class="hint-card">
+            <div class="hint-card-title">
+              <span>💡 HINT — AI Fingerprint &amp; Leak Auditor</span>
+              <span style="font-size: 11px; color: #34d399;">LIVE • Chạy được cả Offline + LLM</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+              Kiểm toán đồng bộ phần cứng, Canvas/WebGL C++, Live CDP Probe (khi profile đang mở), Proxy GeoIP và trùng lặp chéo giữa các profile; chấm điểm <strong>0–100</strong> và gợi ý nút <strong>🔧 Auto-Fix</strong> an toàn.
+            </p>
+            <div class="hint-examples" style="flex-direction: row; flex-wrap: wrap;">
+              <button type="button" class="hint-example-chip" onclick="applyAuditorExample('Facebook / Meta', true)">⚡ Kiểm toán nhanh cho Facebook / Meta</button>
+              <button type="button" class="hint-example-chip" onclick="applyAuditorExample('TikTok', true)">⚡ Kiểm toán nhanh cho TikTok</button>
+              <button type="button" class="hint-example-chip" onclick="applyAuditorExample('Google Ads', false)">⚡ Kiểm toán cấu hình tĩnh Google Ads (Không check Proxy)</button>
+            </div>
+          </div>
+
+          <div class="ai-section-box">
+            <div class="form-grid" style="margin-bottom: 12px;">
+              <div class="form-group">
+                <label>Chọn Profile cần kiểm toán</label>
+                <select id="auditorProfileSelect"></select>
+              </div>
+              <div class="form-group">
+                <label>Nền tảng mục tiêu (Platform)</label>
+                <select id="auditorPlatformSelect">
+                  <option value="General">General</option>
+                  <option value="Facebook / Meta">Facebook / Meta</option>
+                  <option value="TikTok">TikTok</option>
+                  <option value="Google Ads">Google Ads</option>
+                  <option value="Amazon / eBay">Amazon / eBay</option>
+                </select>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-main);">
+                <input type="checkbox" id="auditorCheckProxy" checked style="width: 16px; height: 16px;" />
+                <span>Kiểm tra kết nối Proxy &amp; đối chiếu GeoIP / Timezone / Ngôn ngữ</span>
+              </label>
+              <button class="btn btn-primary" type="button" id="btnRunAudit" onclick="runAiAudit()">🛡️ Chạy Kiểm Toán (Audit)</button>
+            </div>
+          </div>
+
+          <div id="auditorResultContainer" style="display: none;"></div>
+        </div>
+
+        <!-- TAB 3: ACCOUNT WARMING (LIVE) -->
+        <div class="ai-panel" id="aiPanel-warmer">
+          <div class="hint-card">
+            <div class="hint-card-title">
+              <span>💡 HINT — AI Account Warming (Nuôi Profile hành vi tự nhiên)</span>
+              <span style="font-size: 11px; color: #34d399;">LIVE • Tối đa 5 profile đồng thời</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+              Gán nhân cách (Persona) để AI tự lập lịch trình truy cập các trang web công khai an toàn, đọc nội dung và cuộn trang tự nhiên qua CDP nhằm xây dựng cookie &amp; lịch sử duyệt web thật.
+            </p>
+            <div style="font-size: 11px; font-weight: 700; color: #93c5fd; margin-top: 8px; margin-bottom: 4px;">📌 Bấm 1-click chọn Preset Nhân cách mẫu:</div>
+            <div class="hint-examples" id="warmerPresetChips"></div>
+          </div>
+
+          <div class="ai-section-box">
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Chọn Profile cần nuôi (1–5 profile)</label>
+              <div class="ai-checklist" id="warmerProfileList"></div>
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Nhân cách duyệt web (Persona)</label>
+              <textarea id="warmerPersona" rows="2" placeholder="VD: Người tiêu dùng Mỹ yêu thích công nghệ, hay đọc tin phần cứng và so sánh giá laptop..."></textarea>
+            </div>
+            <div class="form-grid" style="margin-bottom: 12px;">
+              <div class="form-group">
+                <label>Thời lượng dự kiến (phút: 0.5 – 30)</label>
+                <input type="number" id="warmerDuration" value="3" min="0.5" max="30" step="0.5" />
+              </div>
+              <div class="form-group">
+                <label>Số trang truy cập mỗi profile (1 – 10 bước)</label>
+                <input type="number" id="warmerMaxSteps" value="4" min="1" max="10" />
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-primary" type="button" id="btnStartWarming" onclick="startAiWarming()">🔥 Bắt đầu Nuôi Profile</button>
+              <button class="btn btn-danger" type="button" id="btnStopAllWarming" onclick="stopAllAiWarming()">■ Dừng tất cả</button>
+              <button class="btn" type="button" onclick="refreshWarmingStatus()">↻ Làm mới trạng thái</button>
+            </div>
+          </div>
+
+          <div id="warmerJobsContainer"></div>
+        </div>
+
+        <!-- TAB 4: SELF-HEALING WORKFLOW (LIVE) -->
+        <div class="ai-panel" id="aiPanel-workflow">
+          <div class="hint-card">
+            <div class="hint-card-title">
+              <span>💡 HINT — AI Workflow Builder &amp; Self-Healing Automation</span>
+              <span style="font-size: 11px; color: #34d399;">LIVE • Biên dịch tiếng Việt + Tự sửa CSS Selector</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+              Nhập kịch bản bằng tiếng Việt tự nhiên để biên dịch thành các bước tự động hóa chuẩn CDP. Khi bật <strong>Self-Healing</strong>, nếu selector bị gãy, AI tự đọc DOM mới và cập nhật workflow vào SQLite.
+            </p>
+            <div style="font-size: 11px; font-weight: 700; color: #93c5fd; margin-top: 8px; margin-bottom: 4px;">📌 Bấm 1-click điền kịch bản mẫu tiếng Việt:</div>
+            <div class="hint-examples" id="workflowExampleChips"></div>
+          </div>
+
+          <div class="ai-section-box">
+            <div class="form-grid" style="margin-bottom: 10px;">
+              <div class="form-group">
+                <label>Tên Workflow (tùy chọn)</label>
+                <input type="text" id="workflowNameInput" placeholder="VD: Trích xuất Hacker News" />
+              </div>
+              <div class="form-group">
+                <label>Profile để chạy Workflow</label>
+                <select id="workflowProfileSelect"></select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Mô tả kịch bản bằng tiếng Việt (Prompt)</label>
+              <textarea id="workflowPromptInput" rows="3" placeholder="VD: Mở https://news.ycombinator.com/, chờ 2 giây, cuộn xuống 600px, trích xuất nội dung và chụp ảnh màn hình."></textarea>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-main);">
+                <input type="checkbox" id="workflowSelfHeal" checked style="width: 16px; height: 16px;" />
+                <span>Bật AI Self-Healing (tự tìm selector thay thế khi click/type lỗi)</span>
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" type="button" id="btnGenWorkflow" onclick="generateAiWorkflow()">✨ Tạo &amp; Lưu Workflow</button>
+                <button class="btn btn-success" type="button" id="btnRunCurrentWorkflow" onclick="runCurrentAiWorkflow()">▶ Chạy Workflow đang chọn</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="workflowStepsPreview" style="display: none; margin-bottom: 12px;"></div>
+          <div id="workflowRunResult" style="display: none; margin-bottom: 12px;"></div>
+
+          <div class="ai-section-box">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <strong style="font-size: 13px;">📚 Danh sách Workflow đã lưu</strong>
+              <button class="btn btn-sm" type="button" onclick="loadAiWorkflows()">↻ Tải lại</button>
+            </div>
+            <div id="savedWorkflowsList"></div>
+          </div>
+        </div>
+
+        <!-- TAB 5: VISUAL EXTRACTOR (LIVE) -->
+        <div class="ai-panel" id="aiPanel-extractor">
+          <div class="hint-card">
+            <div class="hint-card-title">
+              <span>💡 HINT — AI Visual Extractor đa Profile</span>
+              <span style="font-size: 11px; color: #34d399;">LIVE • Round-Robin đa Profile • Xuất CSV / JSON</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+              Phân phối danh sách URL chạy xoay vòng (round-robin) qua nhiều profile/proxy độc lập; trích xuất dữ liệu có cấu trúc bằng chế độ <strong>DOM</strong> hoặc <strong>Vision</strong> (chụp ảnh màn hình gửi LLM) và xuất file CSV (chuẩn Excel UTF-8) hoặc JSON.
+            </p>
+            <div style="font-size: 11px; font-weight: 700; color: #93c5fd; margin-top: 8px; margin-bottom: 4px;">📌 Bấm 1-click chọn Schema mẫu:</div>
+            <div class="hint-examples" id="extractorPresetChips"></div>
+          </div>
+
+          <div class="ai-section-box">
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Chọn các Profile tham gia thu thập dữ liệu</label>
+              <div class="ai-checklist" id="extractorProfileList"></div>
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Danh sách URL mục tiêu (mỗi dòng 1 URL http/https)</label>
+              <textarea id="extractorUrls" rows="3" placeholder="https://news.ycombinator.com/&#10;https://en.wikipedia.org/wiki/Web_scraping"></textarea>
+            </div>
+            <div class="form-grid" style="margin-bottom: 12px;">
+              <div class="form-group">
+                <label>Các trường dữ liệu cần trích xuất (cách nhau bởi dấu phẩy)</label>
+                <input type="text" id="extractorFields" placeholder="product_name, price, currency, availability, summary" />
+              </div>
+              <div class="form-group">
+                <label>Chế độ trích xuất (Mode)</label>
+                <select id="extractorMode">
+                  <option value="dom">DOM Snapshot (Nhanh, tiết kiệm token, có Offline Fallback)</option>
+                  <option value="vision">Vision Screenshot (Chụp ảnh CDP gửi LLM Vision)</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-primary" type="button" id="btnRunExtractor" onclick="runAiExtractor()">👁️ Bắt đầu Trích xuất</button>
+          </div>
+
+          <div id="extractorResultContainer" style="display: none;"></div>
+        </div>
+
+        <!-- TAB 6: MATRIX PLANNER (LIVE) -->
+        <div class="ai-panel" id="aiPanel-matrix">
+          <div class="hint-card">
+            <div class="hint-card-title">
+              <span>💡 HINT — AI Profile Matrix Planner (Chống liên kết chéo)</span>
+              <span style="font-size: 11px; color: #34d399;">LIVE • Phân bổ Blueprint chống trùng 100%</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+              Tự động lập ma trận dàn tài khoản tối ưu độ đa dạng phần cứng (Windows/macOS, GPU, CPU, RAM, độ phân giải, múi giờ, ngôn ngữ &amp; proxy) tránh trùng lặp với toàn bộ profile hiện có trong DB.
+            </p>
+            <div style="font-size: 11px; font-weight: 700; color: #93c5fd; margin-top: 8px; margin-bottom: 4px;">📌 Bấm 1-click chọn mục tiêu mẫu:</div>
+            <div class="hint-examples">
+              <button type="button" class="hint-example-chip" onclick="applyMatrixExample('Tạo 5 profile chạy TikTok Shop US, chia đều Windows RTX & MacBook Apple Silicon, múi giờ bờ Đông/Tây Mỹ.', 5, 'TikTok', 'US')">
+                💬 "Tạo 5 profile chạy TikTok Shop US, chia đều Windows RTX &amp; MacBook Apple Silicon, múi giờ Mỹ."
+              </button>
+              <button type="button" class="hint-example-chip" onclick="applyMatrixExample('Dàn 4 profile nuôi tài khoản Facebook Ads thị trường Châu Âu (Đức), phần cứng đa dạng tránh checkpoint.', 4, 'Facebook / Meta', 'DE')">
+                💬 "Dàn 4 profile nuôi tài khoản Facebook Ads thị trường Đức (DE), phần cứng đa dạng."
+              </button>
+              <button type="button" class="hint-example-chip" onclick="applyMatrixExample('Lập 3 profile nghiên cứu sản phẩm Amazon & Google Ads tại Nhật Bản (JP) với múi giờ Asia/Tokyo.', 3, 'Amazon / eBay', 'JP')">
+                💬 "Lập 3 profile nghiên cứu sản phẩm Amazon tại Nhật Bản (JP) với múi giờ Asia/Tokyo."
+              </button>
+            </div>
+          </div>
+
+          <div class="ai-section-box">
+            <div class="form-grid" style="margin-bottom: 10px;">
+              <div class="form-group full">
+                <label>Mục tiêu dàn tài khoản (Goal)</label>
+                <input type="text" id="matrixGoal" placeholder="VD: Dàn 5 profile chạy TikTok Shop US đa dạng phần cứng" />
+              </div>
+              <div class="form-group">
+                <label>Số lượng Profile (1 – 50)</label>
+                <input type="number" id="matrixCount" value="4" min="1" max="50" />
+              </div>
+              <div class="form-group">
+                <label>Nền tảng (Platform)</label>
+                <select id="matrixPlatform">
+                  <option value="General">General</option>
+                  <option value="Facebook / Meta">Facebook / Meta</option>
+                  <option value="TikTok">TikTok</option>
+                  <option value="Google Ads">Google Ads</option>
+                  <option value="Amazon / eBay">Amazon / eBay</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Khu vực (Region)</label>
+                <select id="matrixRegion">
+                  <option value="US">US — United States</option>
+                  <option value="GB">GB — United Kingdom</option>
+                  <option value="DE">DE — Germany</option>
+                  <option value="FR">FR — France</option>
+                  <option value="CA">CA — Canada</option>
+                  <option value="AU">AU — Australia</option>
+                  <option value="JP">JP — Japan</option>
+                  <option value="KR">KR — South Korea</option>
+                  <option value="SG">SG — Singapore</option>
+                  <option value="VN">VN — Vietnam</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Danh sách Proxy (tùy chọn, mỗi dòng 1 proxy)</label>
+                <textarea id="matrixProxies" rows="2" placeholder="socks5://user:pass@ip:port&#10;http://user:pass@ip:port"></textarea>
+              </div>
+            </div>
+            <button class="btn btn-primary" type="button" id="btnGenMatrix" onclick="generateAiMatrixPlan()">🧩 Lập Kế Hoạch Ma Trận</button>
+          </div>
+
+          <div id="matrixPlanContainer" style="display: none;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeAiStudioModal()">Đóng</button>
       </div>
     </div>
   </div>
@@ -809,6 +1636,7 @@
       }
       await loadProfiles();
       await updateCloudStatus();
+      checkAppUpdate(true).catch(() => {});
       setInterval(loadProfiles, 4000);
       setInterval(updateCloudStatus, 15000);
     }
@@ -1050,7 +1878,10 @@
       await loadProfiles();
     }
 
+    let lastProbedProfileId = null;
+
     async function probeProfile(id) {
+      lastProbedProfileId = id;
       const modal = document.getElementById('probeModal');
       const out = document.getElementById('probeOutput');
       out.textContent = 'Đang kết nối WebSocket tới CDP của Profile ' + id + '...';
@@ -1066,6 +1897,17 @@
         out.textContent = JSON.stringify(res.report, null, 2);
       } else {
         out.textContent = 'Lỗi: ' + res.error;
+      }
+    }
+
+    async function openAuditorFromProbe() {
+      const probeModal = document.getElementById('probeModal');
+      if (probeModal) probeModal.classList.remove('active');
+      await openAiStudioModal('auditor');
+      const sel = document.getElementById('auditorProfileSelect');
+      if (sel && lastProbedProfileId) {
+        sel.value = lastProbedProfileId;
+        await runAiAudit();
       }
     }
 
@@ -1109,6 +1951,7 @@
       }
 
       await checkKernelStatus();
+      await checkAppUpdate(false);
       modal.classList.add('active');
     }
 
@@ -1266,6 +2109,189 @@
       } finally {
         btn.disabled = false;
         btn.textContent = '📤 Đẩy lõi Chrome 151 lên R2';
+      }
+    }
+
+    async function checkAppUpdate(silent = false) {
+      const curEl = document.getElementById('updaterCurrentVersion');
+      const latEl = document.getElementById('updaterLatestVersion');
+      const detailsEl = document.getElementById('updaterReleaseDetails');
+      const pill = document.getElementById('updateAvailablePill');
+      const rollbackBtn = document.getElementById('btnRollbackAppUpdate');
+      const applyBtn = document.getElementById('btnApplyAppUpdate');
+
+      if (!silent) {
+        if (curEl) curEl.textContent = 'Đang kiểm tra...';
+        if (latEl) latEl.textContent = 'Đang kiểm tra...';
+      }
+
+      try {
+        const res = await fetch('/api/v1/updater/check').then((r) => r.json());
+        if (!res.ok) {
+          if (!silent && latEl) latEl.textContent = 'Lỗi kiểm tra';
+          return res;
+        }
+
+        const curVer = res.currentVersion ? `v${res.currentVersion}` : 'v1.1.0';
+        const modeTag = res.isSea ? ' (SEA .exe)' : ' (Dev)';
+        if (curEl) curEl.textContent = curVer + modeTag;
+
+        if (rollbackBtn) {
+          rollbackBtn.disabled = !res.hasBackup;
+          rollbackBtn.title = res.hasBackup
+            ? 'Khôi phục lại bản .old.exe đã sao lưu trước đó'
+            : 'Chưa có file sao lưu .old.exe trên máy này';
+        }
+
+        if (applyBtn) {
+          applyBtn.disabled = !res.hasRelease;
+        }
+
+        if (pill) {
+          if (res.updateAvailable && res.latestVersion) {
+            pill.style.display = 'inline-flex';
+            pill.textContent = `🚀 Có bản mới v${res.latestVersion}!`;
+          } else {
+            pill.style.display = 'none';
+          }
+        }
+
+        if (latEl) {
+          if (!res.enabled) {
+            latEl.innerHTML = '<span style="color: #94a3b8;">Chưa bật R2</span>';
+          } else if (!res.hasRelease) {
+            latEl.innerHTML = '<span style="color: #f59e0b;">Chưa có bản phát hành</span>';
+          } else if (res.updateAvailable) {
+            latEl.innerHTML = `<span style="color: #34d399;">🚀 v${escapeHtml(res.latestVersion)} (Có bản mới!)</span>`;
+          } else {
+            latEl.innerHTML = `<span style="color: #60a5fa;">✓ v${escapeHtml(res.latestVersion)} (Đã mới nhất)</span>`;
+          }
+        }
+
+        if (detailsEl) {
+          if (res.hasRelease && res.manifest) {
+            const m = res.manifest;
+            const mb = m.sizeBytes ? (m.sizeBytes / (1024 * 1024)).toFixed(2) + ' MB' : 'N/A';
+            const shaPreview = m.sha256 ? `${String(m.sha256).slice(0, 16)}...${String(m.sha256).slice(-8)}` : 'N/A';
+            const notesHtml = m.notes ? `<div><strong>Ghi chú:</strong> ${escapeHtml(m.notes)}</div>` : '';
+            const dateStr = m.buildDate ? new Date(m.buildDate).toLocaleString('vi-VN') : '';
+            detailsEl.innerHTML =
+              `${notesHtml}` +
+              `<div><strong>Dung lượng:</strong> ${escapeHtml(mb)}${dateStr ? ' • <strong>Build:</strong> ' + escapeHtml(dateStr) : ''}</div>` +
+              `<div class="mono" style="font-size: 11px;"><strong>SHA-256:</strong> ${escapeHtml(shaPreview)}</div>`;
+            detailsEl.style.display = 'block';
+          } else {
+            detailsEl.style.display = 'none';
+            detailsEl.textContent = '';
+          }
+        }
+
+        return res;
+      } catch (err) {
+        if (!silent && latEl) latEl.textContent = 'Lỗi kết nối';
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function applyAppUpdate() {
+      const btn = document.getElementById('btnApplyAppUpdate');
+      if (!confirm('Tải bản cập nhật mới nhất từ Cloudflare R2, kiểm tra SHA-256, sao lưu bản cũ (.old.exe) và áp dụng ngay?')) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang tải & xác thực SHA-256...';
+      }
+      showToast('🚀 Đang tải gói cập nhật từ Cloudflare R2 và xác thực SHA-256...');
+      try {
+        const resp = await fetch('/api/v1/updater/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const res = await resp.json();
+        if (res.ok) {
+          if (res.willRestart) {
+            showToast(`✓ Đã xác thực SHA-256 bản v${res.version || ''}! Ứng dụng sẽ tự khởi động lại trong giây lát...`);
+          } else {
+            showToast(`✓ Đã cập nhật thành công bản v${res.version || ''} (SHA-256 verified) và sao lưu .old.exe!`);
+            await checkAppUpdate(false);
+          }
+        } else {
+          alert('Không thể cập nhật: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi cập nhật: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '⬇️ Tải & Cập nhật 1-Click';
+        }
+      }
+    }
+
+    async function rollbackAppUpdate() {
+      const btn = document.getElementById('btnRollbackAppUpdate');
+      if (!confirm('Khôi phục lại phiên bản trước đó từ file sao lưu .old.exe?')) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang khôi phục...';
+      }
+      try {
+        const resp = await fetch('/api/v1/updater/rollback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const res = await resp.json();
+        if (res.ok) {
+          if (res.willRestart) {
+            showToast('↩️ Đã lên lịch khôi phục bản cũ! Ứng dụng sẽ tự khởi động lại...');
+          } else {
+            showToast('✓ Đã khôi phục phiên bản cũ từ .old.exe thành công!');
+            await checkAppUpdate(false);
+          }
+        } else {
+          alert('Không thể khôi phục: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi khôi phục: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '↩️ Khôi phục bản cũ';
+        }
+      }
+    }
+
+    async function publishAppUpdate() {
+      const btn = document.getElementById('btnPublishAppUpdate');
+      const notes = prompt('Nhập ghi chú phát hành (Release Notes) cho bản cập nhật này (có thể để trống):', '');
+      if (notes === null) return;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Đang đẩy .exe lên R2...';
+      }
+      showToast('📤 Đang tính SHA-256 và đẩy file VTN-Anti-Browser.exe lên Cloudflare R2...');
+      try {
+        const resp = await fetch('/api/v1/updater/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes })
+        });
+        const res = await resp.json();
+        if (res.ok && res.manifest) {
+          const mb = (res.manifest.sizeBytes / (1024 * 1024)).toFixed(2);
+          showToast(`✓ Đã phát hành v${res.manifest.version} (${mb} MB) lên R2 thành công!`);
+          await checkAppUpdate(false);
+        } else {
+          alert('Lỗi đẩy bản .exe lên R2: ' + (res.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi đẩy bản .exe: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '📤 Đẩy bản .exe lên R2';
+        }
       }
     }
 
@@ -1517,6 +2543,1455 @@
         });
       }
     });
+
+    // ==================== AI STUDIO & ANTIDETECT MCP SERVER ====================
+    let mcpInfoCache = null;
+    let currentMcpConfigMode = 'http';
+    let currentMcpToolGroup = 'all';
+    let aiConfigCache = null;
+    let lastAuditReport = null;
+    let warmerPresetsCache = [];
+    let selectedWarmerPresetId = null;
+    let warmerPollTimer = null;
+    let savedWorkflowsCache = [];
+    let workflowExamplesCache = [];
+    let activeWorkflowObj = null;
+    let extractorPresetsCache = [];
+    let lastExtractorResult = null;
+    let currentMatrixItems = [];
+
+    const AI_PROVIDER_DEFAULTS_UI = {
+      gemini: { model: 'gemini-2.5-flash', baseUrl: 'https://generativelanguage.googleapis.com/v1beta' },
+      openai: { model: 'gpt-4o-mini', baseUrl: 'https://api.openai.com/v1' },
+      ollama: { model: 'llama3.2', baseUrl: 'http://127.0.0.1:11434' }
+    };
+
+    function isAiStudioOpen() {
+      const modal = document.getElementById('aiStudioModal');
+      return Boolean(modal && modal.classList.contains('active'));
+    }
+
+    async function openAiStudioModal(defaultTab = 'mcp') {
+      const modal = document.getElementById('aiStudioModal');
+      if (!modal) return;
+      modal.classList.add('active');
+      syncAiProfileSelectors();
+      switchAiTab(defaultTab);
+      await Promise.allSettled([
+        loadMcpInfo(),
+        loadAiProviderConfig(),
+        loadWarmerPresets(),
+        loadAiWorkflows(),
+        loadExtractorPresets()
+      ]);
+      if (defaultTab === 'warmer') {
+        await refreshWarmingStatus();
+      }
+    }
+
+    function closeAiStudioModal() {
+      stopWarmerPolling();
+      const modal = document.getElementById('aiStudioModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function switchAiTab(tabId) {
+      document.querySelectorAll('.ai-tab-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.aiTab === tabId);
+      });
+      document.querySelectorAll('.ai-panel').forEach((panel) => {
+        panel.classList.toggle('active', panel.id === `aiPanel-${tabId}`);
+      });
+      syncAiProfileSelectors();
+      if (tabId === 'warmer') {
+        refreshWarmingStatus();
+      } else if (tabId === 'workflow') {
+        loadAiWorkflows();
+      }
+    }
+
+    function syncAiProfileSelectors() {
+      const optionsHtml = allProfiles.length > 0
+        ? allProfiles.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.id)})${p.running ? ' ● Đang chạy' : ''}</option>`).join('')
+        : '<option value="">Chưa có profile nào</option>';
+
+      ['auditorProfileSelect', 'workflowProfileSelect'].forEach((selId) => {
+        const el = document.getElementById(selId);
+        if (!el) return;
+        const prev = el.value;
+        el.innerHTML = optionsHtml;
+        if (prev && allProfiles.some((p) => p.id === prev)) {
+          el.value = prev;
+        }
+      });
+
+      ['warmerProfileList', 'extractorProfileList'].forEach((boxId) => {
+        const box = document.getElementById(boxId);
+        if (!box) return;
+        const checkedSet = new Set(Array.from(box.querySelectorAll('input[type="checkbox"]:checked')).map((c) => c.value));
+        if (allProfiles.length === 0) {
+          box.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:4px;">Chưa có profile nào.</div>';
+          return;
+        }
+        box.innerHTML = allProfiles.map((p, idx) => {
+          const isChecked = checkedSet.size > 0 ? checkedSet.has(p.id) : idx === 0;
+          return `
+            <label class="ai-check-item">
+              <input type="checkbox" value="${escapeHtml(p.id)}" ${isChecked ? 'checked' : ''} />
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+            </label>
+          `;
+        }).join('');
+      });
+    }
+
+    // ---------- AI Provider Config Bar ----------
+    function toggleAiProviderBar() {
+      const body = document.getElementById('aiProviderBody');
+      const chev = document.getElementById('aiProviderChevron');
+      if (!body) return;
+      const open = body.classList.toggle('open');
+      if (chev) chev.textContent = open ? '▲ Thu gọn' : '▼ Mở rộng';
+    }
+
+    function onAiProviderSelectChange() {
+      const provider = document.getElementById('aiCfgProvider')?.value || 'gemini';
+      const def = AI_PROVIDER_DEFAULTS_UI[provider] || AI_PROVIDER_DEFAULTS_UI.gemini;
+      const modelEl = document.getElementById('aiCfgModel');
+      const urlEl = document.getElementById('aiCfgBaseUrl');
+      if (modelEl) modelEl.value = def.model;
+      if (urlEl) urlEl.value = def.baseUrl;
+    }
+
+    function updateAiProviderBadge(cfg) {
+      const badge = document.getElementById('aiProviderBadge');
+      const summary = document.getElementById('aiProviderSummary');
+      const configured = Boolean(cfg && cfg.enabled && (cfg.provider === 'ollama' || cfg.hasApiKey));
+      if (badge) {
+        if (configured) {
+          badge.style.background = 'rgba(16, 185, 129, 0.14)';
+          badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          badge.style.color = '#34d399';
+          badge.textContent = `● AI: ${cfg.provider.toUpperCase()} (${cfg.model})`;
+        } else {
+          badge.style.background = 'rgba(148, 163, 184, 0.14)';
+          badge.style.borderColor = 'rgba(148, 163, 184, 0.35)';
+          badge.style.color = '#94a3b8';
+          badge.textContent = '○ AI: Offline Fallback';
+        }
+      }
+      if (summary) {
+        summary.textContent = configured
+          ? `Đang bật ${cfg.provider} / ${cfg.model}${cfg.apiKeyPreview ? ` (Key: ${cfg.apiKeyPreview})` : ''}`
+          : 'Chưa bật LLM — các tính năng vẫn hoạt động ở chế độ Offline Fallback';
+      }
+    }
+
+    async function loadAiProviderConfig() {
+      try {
+        const res = await fetch('/api/v1/ai/config').then((r) => r.json());
+        if (!res || !res.ok || !res.config) return;
+        const cfg = res.config;
+        aiConfigCache = cfg;
+        const pEl = document.getElementById('aiCfgProvider');
+        const mEl = document.getElementById('aiCfgModel');
+        const uEl = document.getElementById('aiCfgBaseUrl');
+        const kEl = document.getElementById('aiCfgApiKey');
+        const eEl = document.getElementById('aiCfgEnabled');
+        const hEl = document.getElementById('aiCfgKeyHint');
+
+        if (pEl) pEl.value = cfg.provider || 'gemini';
+        if (mEl) mEl.value = cfg.model || '';
+        if (uEl) uEl.value = cfg.baseUrl || '';
+        if (kEl) {
+          kEl.value = '';
+          kEl.placeholder = cfg.hasApiKey ? '•••••••••••••••• (Giữ nguyên nếu để trống)' : 'Nhập API Key...';
+        }
+        if (eEl) eEl.checked = Boolean(cfg.enabled);
+        if (hEl) {
+          if (cfg.hasApiKey) {
+            hEl.style.display = 'block';
+            hEl.textContent = `✓ Đã lưu API Key (${cfg.apiKeyPreview || '****'})`;
+          } else {
+            hEl.style.display = 'none';
+          }
+        }
+        updateAiProviderBadge(cfg);
+      } catch (err) {
+        console.error('Failed to load AI config:', err);
+      }
+    }
+
+    async function saveAiProviderConfig() {
+      const btn = document.getElementById('btnSaveAiCfg');
+      const msg = document.getElementById('aiProviderMsg');
+      const provider = document.getElementById('aiCfgProvider').value;
+      const model = document.getElementById('aiCfgModel').value.trim();
+      const baseUrl = document.getElementById('aiCfgBaseUrl').value.trim();
+      const apiKey = document.getElementById('aiCfgApiKey').value.trim();
+      const enabled = document.getElementById('aiCfgEnabled').checked;
+
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang lưu...'; }
+      try {
+        const payload = { provider, model, baseUrl, enabled };
+        if (apiKey) payload.apiKey = apiKey;
+        const res = await fetch('/api/v1/ai/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then((r) => r.json());
+        if (res.ok && res.config) {
+          aiConfigCache = res.config;
+          await loadAiProviderConfig();
+          if (msg) {
+            msg.style.display = 'block';
+            msg.style.background = 'rgba(16, 185, 129, 0.14)';
+            msg.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+            msg.style.color = '#6ee7b7';
+            msg.textContent = `✓ Đã lưu cấu hình AI (${res.config.provider} / ${res.config.model}).`;
+          }
+          showToast('✓ Đã lưu cấu hình AI Provider');
+        } else {
+          if (msg) {
+            msg.style.display = 'block';
+            msg.style.background = 'rgba(239, 68, 68, 0.14)';
+            msg.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            msg.style.color = '#fca5a5';
+            msg.textContent = `✕ Lỗi lưu cấu hình: ${res.error || 'Unknown'}`;
+          }
+        }
+      } catch (err) {
+        if (msg) {
+          msg.style.display = 'block';
+          msg.style.background = 'rgba(239, 68, 68, 0.14)';
+          msg.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+          msg.style.color = '#fca5a5';
+          msg.textContent = `✕ Lỗi kết nối: ${err.message}`;
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Lưu cấu hình AI'; }
+      }
+    }
+
+    async function testAiProviderConnection() {
+      const btn = document.getElementById('btnTestAiConn');
+      const msg = document.getElementById('aiProviderMsg');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang kiểm tra...'; }
+      try {
+        const res = await fetch('/api/v1/ai/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        }).then((r) => r.json());
+        const r = res.result || res;
+        if (msg) {
+          msg.style.display = 'block';
+          if (r && r.ok) {
+            msg.style.background = 'rgba(16, 185, 129, 0.14)';
+            msg.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+            msg.style.color = '#6ee7b7';
+            msg.textContent = `✓ Kết nối thành công (${r.provider}/${r.model}) trong ${r.latencyMs}ms — Phản hồi: "${r.reply || 'OK'}"`;
+          } else {
+            msg.style.background = 'rgba(239, 68, 68, 0.14)';
+            msg.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            msg.style.color = '#fca5a5';
+            msg.textContent = `✕ Kiểm tra thất bại: ${(r && r.error) || res.error || 'Unknown'}`;
+          }
+        }
+      } catch (err) {
+        if (msg) {
+          msg.style.display = 'block';
+          msg.style.background = 'rgba(239, 68, 68, 0.14)';
+          msg.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+          msg.style.color = '#fca5a5';
+          msg.textContent = `✕ Lỗi kiểm tra kết nối: ${err.message}`;
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ Test Connection'; }
+      }
+    }
+
+    // ---------- TAB 2: AI AUDITOR ----------
+    function applyAuditorExample(platform, checkProxy) {
+      const platEl = document.getElementById('auditorPlatformSelect');
+      const chkEl = document.getElementById('auditorCheckProxy');
+      if (platEl) platEl.value = platform;
+      if (chkEl) chkEl.checked = Boolean(checkProxy);
+      runAiAudit();
+    }
+
+    async function runAiAudit() {
+      const profileId = document.getElementById('auditorProfileSelect')?.value;
+      const platform = document.getElementById('auditorPlatformSelect')?.value || 'General';
+      const checkProxy = Boolean(document.getElementById('auditorCheckProxy')?.checked);
+      const btn = document.getElementById('btnRunAudit');
+      const box = document.getElementById('auditorResultContainer');
+
+      if (!profileId) {
+        showToast('⚠️ Vui lòng chọn một Profile để kiểm toán');
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang kiểm toán...'; }
+      if (box) {
+        box.style.display = 'block';
+        box.innerHTML = '<div class="ai-section-box" style="color:var(--text-muted);font-size:12px;">⏳ Đang phân tích cấu hình phần cứng, Live CDP Probe, Proxy GeoIP và trùng lặp chéo...</div>';
+      }
+      try {
+        const res = await fetch('/api/v1/ai/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileId, platform, checkProxy })
+        }).then((r) => r.json());
+        if (res.ok && res.report) {
+          lastAuditReport = res.report;
+          renderAuditReport(res.report);
+        } else if (box) {
+          box.innerHTML = `<div class="ai-section-box" style="color:#fca5a5;font-size:12px;">✕ Lỗi kiểm toán: ${escapeHtml(res.error || 'Unknown')}</div>`;
+        }
+      } catch (err) {
+        if (box) {
+          box.innerHTML = `<div class="ai-section-box" style="color:#fca5a5;font-size:12px;">✕ Lỗi kết nối: ${escapeHtml(err.message)}</div>`;
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🛡️ Chạy Kiểm Toán (Audit)'; }
+      }
+    }
+
+    function renderAuditReport(report) {
+      const box = document.getElementById('auditorResultContainer');
+      if (!box) return;
+      box.style.display = 'block';
+      const score = Number(report.score || 0);
+      const scoreColor = score >= 85 ? '#34d399' : score >= 65 ? '#fbbf24' : '#f87171';
+      const hasPatch = Boolean(report.suggestedPatch && Object.keys(report.suggestedPatch).length > 0);
+      const findings = Array.isArray(report.findings) ? report.findings : [];
+
+      const findingsHtml = findings.length === 0
+        ? '<div class="ai-finding-item" style="border-color:rgba(16,185,129,0.4);color:#6ee7b7;">✓ Không phát hiện lỗi rò rỉ hoặc mâu thuẫn vân tay nào.</div>'
+        : findings.map((f) => `
+            <div class="ai-finding-item">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="sev-badge sev-${escapeHtml(f.severity || 'info')}">${escapeHtml(f.severity || 'info')}</span>
+                  <strong>${escapeHtml(f.title)}</strong>
+                </div>
+                <span class="mono" style="font-size:10px;color:var(--text-muted);">${escapeHtml(f.code)} · ${escapeHtml(f.source || 'deterministic')}</span>
+              </div>
+              <div style="color:var(--text-muted);margin-bottom:4px;">${escapeHtml(f.detail)}</div>
+              ${f.fixHint ? `<div style="color:#93c5fd;">💡 Gợi ý: ${escapeHtml(f.fixHint)}</div>` : ''}
+            </div>
+          `).join('');
+
+      box.innerHTML = `
+        <div class="ai-score-card">
+          <div class="ai-score-circle" style="border-color:${scoreColor};color:${scoreColor};">
+            <span style="font-size:20px;line-height:1;">${score}</span>
+            <span style="font-size:11px;">Grade ${escapeHtml(report.grade || '-')}</span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px;">
+              ${escapeHtml(report.profileName)} — ${escapeHtml(report.platform)}
+              <span class="badge" style="margin-left:6px;">${report.probeUsed ? 'Live CDP' : 'Static Config'}</span>
+              <span class="badge" style="margin-left:4px;">${report.usedLlm ? 'LLM Enriched' : 'Deterministic'}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.45;">${escapeHtml(report.summary)}</div>
+          </div>
+          ${hasPatch ? `<button class="btn btn-primary btn-sm" type="button" id="btnApplyAuditFix" onclick="applyCurrentAuditFix()">🔧 Auto-Fix Ngay</button>` : ''}
+        </div>
+        <div>${findingsHtml}</div>
+      `;
+    }
+
+    async function applyCurrentAuditFix() {
+      if (!lastAuditReport || !lastAuditReport.suggestedPatch) return;
+      const btn = document.getElementById('btnApplyAuditFix');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang sửa...'; }
+      try {
+        const res = await fetch('/api/v1/ai/audit/apply-fix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            profileId: lastAuditReport.profileId,
+            suggestedPatch: lastAuditReport.suggestedPatch
+          })
+        }).then((r) => r.json());
+        if (res.ok) {
+          const fields = (res.appliedFields || []).join(', ');
+          showToast(`✓ Đã Auto-Fix thành công (${fields || 'profile'})`);
+          await loadProfiles();
+          await runAiAudit();
+        } else {
+          showToast(`✕ Lỗi Auto-Fix: ${res.error || 'Unknown'}`);
+        }
+      } catch (err) {
+        showToast(`✕ Lỗi kết nối Auto-Fix: ${err.message}`);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🔧 Auto-Fix Ngay'; }
+      }
+    }
+
+    // ---------- TAB 3: ACCOUNT WARMING ----------
+    async function loadWarmerPresets() {
+      try {
+        const res = await fetch('/api/v1/ai/warm/presets').then((r) => r.json());
+        if (!res.ok || !Array.isArray(res.presets)) return;
+        warmerPresetsCache = res.presets;
+        const container = document.getElementById('warmerPresetChips');
+        if (!container) return;
+        container.innerHTML = warmerPresetsCache.map((p) => `
+          <button type="button" class="hint-example-chip" onclick="applyWarmerPreset('${escapeJs(p.id)}')">
+            🔥 <strong>${escapeHtml(p.label)}</strong>: ${escapeHtml(p.persona)}
+          </button>
+        `).join('');
+        const personaEl = document.getElementById('warmerPersona');
+        if (personaEl && !personaEl.value.trim() && warmerPresetsCache[0]) {
+          personaEl.value = warmerPresetsCache[0].persona;
+          selectedWarmerPresetId = warmerPresetsCache[0].id;
+        }
+      } catch (err) {
+        console.error('Failed to load warmer presets:', err);
+      }
+    }
+
+    function applyWarmerPreset(presetId) {
+      const preset = warmerPresetsCache.find((p) => p.id === presetId);
+      if (!preset) return;
+      selectedWarmerPresetId = preset.id;
+      const personaEl = document.getElementById('warmerPersona');
+      if (personaEl) personaEl.value = preset.persona;
+      showToast(`✓ Đã chọn Preset: ${preset.label}`);
+    }
+
+    async function startAiWarming() {
+      const box = document.getElementById('warmerProfileList');
+      const profileIds = box ? Array.from(box.querySelectorAll('input[type="checkbox"]:checked')).map((c) => c.value) : [];
+      const persona = (document.getElementById('warmerPersona')?.value || '').trim();
+      const durationMinutes = Number(document.getElementById('warmerDuration')?.value || 3);
+      const maxSteps = Number(document.getElementById('warmerMaxSteps')?.value || 4);
+
+      if (profileIds.length === 0) {
+        showToast('⚠️ Vui lòng chọn ít nhất 1 profile để nuôi');
+        return;
+      }
+      const btn = document.getElementById('btnStartWarming');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang khởi tạo...'; }
+      try {
+        const res = await fetch('/api/v1/ai/warm/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            profileIds,
+            persona,
+            presetId: selectedWarmerPresetId || undefined,
+            durationMinutes,
+            maxSteps
+          })
+        }).then((r) => r.json());
+        if (res.ok) {
+          showToast(`🔥 Đã khởi chạy ${res.started || profileIds.length} phiên Account Warming!`);
+          await refreshWarmingStatus();
+        } else {
+          showToast(`✕ Lỗi khởi chạy Warming: ${res.error || 'Unknown'}`);
+        }
+      } catch (err) {
+        showToast(`✕ Lỗi kết nối: ${err.message}`);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🔥 Bắt đầu Nuôi Profile'; }
+      }
+    }
+
+    async function stopAllAiWarming() {
+      try {
+        const res = await fetch('/api/v1/ai/warm/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        }).then((r) => r.json());
+        if (res.ok) {
+          showToast(`■ Đã gửi lệnh dừng (${res.stoppedCount || 0} phiên đang chạy)`);
+          await refreshWarmingStatus();
+        }
+      } catch (err) {
+        showToast(`✕ Lỗi dừng Warming: ${err.message}`);
+      }
+    }
+
+    async function stopSingleWarmingJob(jobId) {
+      try {
+        await fetch('/api/v1/ai/warm/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId })
+        });
+        await refreshWarmingStatus();
+      } catch {}
+    }
+
+    function stopWarmerPolling() {
+      if (warmerPollTimer) {
+        clearInterval(warmerPollTimer);
+        warmerPollTimer = null;
+      }
+    }
+
+    function ensureWarmerPolling(hasRunning) {
+      if (hasRunning && isAiStudioOpen()) {
+        if (!warmerPollTimer) {
+          warmerPollTimer = setInterval(() => {
+            if (!isAiStudioOpen()) {
+              stopWarmerPolling();
+              return;
+            }
+            refreshWarmingStatus();
+          }, 2500);
+        }
+      } else {
+        stopWarmerPolling();
+      }
+    }
+
+    async function refreshWarmingStatus() {
+      try {
+        const res = await fetch('/api/v1/ai/warm/status').then((r) => r.json());
+        if (!res.ok) return;
+        const jobs = Array.isArray(res.jobs) ? res.jobs : [];
+        renderWarmingJobs(jobs);
+        ensureWarmerPolling(jobs.some((j) => j.status === 'running'));
+      } catch (err) {
+        console.error('Failed to refresh warming status:', err);
+      }
+    }
+
+    function renderWarmingJobs(jobs) {
+      const container = document.getElementById('warmerJobsContainer');
+      if (!container) return;
+      if (!jobs.length) {
+        container.innerHTML = '<div class="ai-section-box" style="font-size:12px;color:var(--text-muted);">Chưa có phiên Account Warming nào. Chọn profile và bấm <strong>Bắt đầu Nuôi Profile</strong>.</div>';
+        return;
+      }
+      container.innerHTML = jobs.map((j) => {
+        const badgeCls = j.status === 'running' ? 'badge-running' : (j.status === 'completed' ? 'badge-win' : 'badge-stopped');
+        const logsHtml = (j.logs || []).slice(-6).map((l) => `<div>[${escapeHtml((l.at || '').slice(11, 19))}] ${escapeHtml(l.message)}</div>`).join('');
+        return `
+          <div class="ai-section-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+              <div>
+                <strong style="font-size:13px;">${escapeHtml(j.profileName)}</strong>
+                <span class="mono" style="font-size:11px;color:var(--text-muted);margin-left:6px;">${escapeHtml(j.jobId)}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="badge ${badgeCls}">${escapeHtml(j.status)} (${j.stepsCompleted}/${j.totalSteps})</span>
+                ${j.status === 'running' ? `<button class="btn btn-sm btn-danger" type="button" onclick="stopSingleWarmingJob('${escapeJs(j.jobId)}')">■ Dừng</button>` : ''}
+              </div>
+            </div>
+            <div class="ai-log-box">${logsHtml || 'Đang chờ log...'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ---------- TAB 4: SELF-HEALING WORKFLOW ----------
+    async function loadAiWorkflows() {
+      try {
+        const res = await fetch('/api/v1/ai/workflows').then((r) => r.json());
+        if (!res.ok) return;
+        savedWorkflowsCache = Array.isArray(res.workflows) ? res.workflows : [];
+        workflowExamplesCache = Array.isArray(res.examples) ? res.examples : [];
+
+        const exBox = document.getElementById('workflowExampleChips');
+        if (exBox && workflowExamplesCache.length > 0) {
+          exBox.innerHTML = workflowExamplesCache.map((ex) => `
+            <button type="button" class="hint-example-chip" onclick="applyWorkflowExample('${escapeJs(ex.id)}')">
+              💬 <strong>${escapeHtml(ex.label)}</strong>: "${escapeHtml(ex.prompt)}"
+            </button>
+          `).join('');
+        }
+
+        const listBox = document.getElementById('savedWorkflowsList');
+        if (listBox) {
+          if (savedWorkflowsCache.length === 0) {
+            listBox.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">Chưa có workflow nào được lưu.</div>';
+          } else {
+            listBox.innerHTML = savedWorkflowsCache.map((wf) => `
+              <div class="ai-finding-item" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="min-width:0;flex:1;">
+                  <div style="font-weight:700;font-size:12px;">
+                    ${escapeHtml(wf.name)}
+                    <span class="badge" style="margin-left:6px;">${(wf.steps || []).length} bước</span>
+                    ${wf.healCount > 0 ? `<span class="badge badge-running" style="margin-left:4px;">🩹 Self-Healed x${wf.healCount}</span>` : ''}
+                  </div>
+                  <div class="subtext" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(wf.prompt)}</div>
+                </div>
+                <div style="display:flex;gap:6px;flex-shrink:0;">
+                  <button class="btn btn-sm" type="button" onclick="selectSavedWorkflow('${escapeJs(wf.id)}')">👁️ Xem</button>
+                  <button class="btn btn-sm btn-success" type="button" onclick="runSavedWorkflow('${escapeJs(wf.id)}')">▶ Chạy</button>
+                  <button class="btn btn-sm btn-danger" type="button" onclick="deleteSavedWorkflow('${escapeJs(wf.id)}')">🗑</button>
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load workflows:', err);
+      }
+    }
+
+    function applyWorkflowExample(exId) {
+      const ex = workflowExamplesCache.find((e) => e.id === exId);
+      if (!ex) return;
+      const nEl = document.getElementById('workflowNameInput');
+      const pEl = document.getElementById('workflowPromptInput');
+      if (nEl) nEl.value = ex.name || '';
+      if (pEl) pEl.value = ex.prompt || '';
+      showToast(`✓ Đã điền kịch bản mẫu: ${ex.label}`);
+    }
+
+    function selectSavedWorkflow(wfId) {
+      const wf = savedWorkflowsCache.find((w) => w.id === wfId);
+      if (!wf) return;
+      activeWorkflowObj = wf;
+      const nEl = document.getElementById('workflowNameInput');
+      const pEl = document.getElementById('workflowPromptInput');
+      if (nEl) nEl.value = wf.name || '';
+      if (pEl) pEl.value = wf.prompt || '';
+      renderWorkflowSteps(wf);
+    }
+
+    function renderWorkflowSteps(wf, usedLlm) {
+      const box = document.getElementById('workflowStepsPreview');
+      if (!box || !wf) return;
+      box.style.display = 'block';
+      const steps = Array.isArray(wf.steps) ? wf.steps : [];
+      const rows = steps.map((s, idx) => {
+        const detail = s.url || s.selector || (s.ms ? `${s.ms}ms` : '') || (s.direction ? `${s.direction} ${s.amount}px` : '') || s.description || '';
+        return `
+          <tr>
+            <td class="mono">${idx + 1}</td>
+            <td><span class="badge badge-win">${escapeHtml(s.action)}</span></td>
+            <td class="mono">${escapeHtml(detail)}${s.text ? ` → "${escapeHtml(s.text)}"` : ''}</td>
+            <td style="color:var(--text-muted);">${escapeHtml(s.description || '')}</td>
+          </tr>
+        `;
+      }).join('');
+      box.innerHTML = `
+        <div class="ai-section-box" style="margin-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <strong style="font-size:13px;">📋 Các bước Workflow: ${escapeHtml(wf.name)}</strong>
+            <span class="badge">${usedLlm === true ? 'LLM Compiled' : (usedLlm === false ? 'Offline Heuristic' : `${steps.length} bước`)}</span>
+          </div>
+          <table class="ai-mini-table">
+            <thead><tr><th>#</th><th>Hành động</th><th>Tham số</th><th>Mô tả</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function generateAiWorkflow() {
+      const prompt = (document.getElementById('workflowPromptInput')?.value || '').trim();
+      const name = (document.getElementById('workflowNameInput')?.value || '').trim();
+      if (!prompt) {
+        showToast('⚠️ Vui lòng nhập mô tả kịch bản (prompt)');
+        return;
+      }
+      const btn = document.getElementById('btnGenWorkflow');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang biên dịch...'; }
+      try {
+        const res = await fetch('/api/v1/ai/workflow/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, name: name || undefined, save: true })
+        }).then((r) => r.json());
+        if (res.ok && res.workflow) {
+          activeWorkflowObj = res.workflow;
+          renderWorkflowSteps(res.workflow, res.usedLlm);
+          await loadAiWorkflows();
+          showToast(`✓ Đã tạo và lưu Workflow "${res.workflow.name}" (${res.workflow.steps.length} bước)`);
+        } else {
+          showToast(`✕ Lỗi tạo Workflow: ${res.error || 'Unknown'}`);
+        }
+      } catch (err) {
+        showToast(`✕ Lỗi kết nối: ${err.message}`);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '✨ Tạo & Lưu Workflow'; }
+      }
+    }
+
+    async function runCurrentAiWorkflow() {
+      if (!activeWorkflowObj) {
+        showToast('⚠️ Vui lòng tạo hoặc chọn một Workflow trước khi chạy');
+        return;
+      }
+      await executeWorkflowPayload(activeWorkflowObj.id ? { workflowId: activeWorkflowObj.id } : { workflow: activeWorkflowObj });
+    }
+
+    async function runSavedWorkflow(wfId) {
+      selectSavedWorkflow(wfId);
+      await executeWorkflowPayload({ workflowId: wfId });
+    }
+
+    async function executeWorkflowPayload(wfRef) {
+      const profileId = document.getElementById('workflowProfileSelect')?.value;
+      const enableSelfHeal = Boolean(document.getElementById('workflowSelfHeal')?.checked);
+      if (!profileId) {
+        showToast('⚠️ Vui lòng chọn Profile để chạy Workflow');
+        return;
+      }
+      const out = document.getElementById('workflowRunResult');
+      if (out) {
+        out.style.display = 'block';
+        out.innerHTML = '<div class="ai-section-box" style="font-size:12px;color:var(--text-muted);">⏳ Đang thực thi Workflow qua CDP...</div>';
+      }
+      try {
+        const res = await fetch('/api/v1/ai/workflow/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({}, wfRef, { profileId, enableSelfHeal }))
+        }).then((r) => r.json());
+        renderWorkflowRunResult(res.result || res);
+        await loadAiWorkflows();
+      } catch (err) {
+        if (out) {
+          out.innerHTML = `<div class="ai-section-box" style="color:#fca5a5;font-size:12px;">✕ Lỗi thực thi: ${escapeHtml(err.message)}</div>`;
+        }
+      }
+    }
+
+    function renderWorkflowRunResult(r) {
+      const out = document.getElementById('workflowRunResult');
+      if (!out || !r) return;
+      out.style.display = 'block';
+      const healed = Array.isArray(r.healedSteps) ? r.healedSteps : [];
+      const logsHtml = (r.logs || []).map((l) => `<div>[${escapeHtml((l.at || '').slice(11, 19))}] ${escapeHtml(l.message)}</div>`).join('');
+      const healedHtml = healed.length > 0
+        ? `<div style="margin:8px 0;padding:8px 10px;border-radius:7px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.4);font-size:12px;color:#6ee7b7;">
+             🩹 AI Self-Healing đã sửa ${healed.length} selector: ${healed.map((h) => `Bước #${h.stepIndex + 1} (${escapeHtml(h.oldSelector)} → ${escapeHtml(h.newSelector)})`).join('; ')}
+           </div>`
+        : '';
+      const extractedHtml = Array.isArray(r.extractedData) && r.extractedData.length > 0
+        ? `<div style="margin-top:8px;font-size:12px;"><strong>📄 Dữ liệu trích xuất:</strong><pre class="probe-box" style="max-height:140px;margin-top:4px;">${escapeHtml(JSON.stringify(r.extractedData, null, 2))}</pre></div>`
+        : '';
+      const shotsCount = Array.isArray(r.screenshots) ? r.screenshots.length : 0;
+
+      out.innerHTML = `
+        <div class="ai-section-box" style="margin-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <strong style="font-size:13px;color:${r.ok ? '#34d399' : '#f87171'};">
+              ${r.ok ? '✓ Thực thi Workflow thành công' : '✕ Workflow gặp lỗi'} (${r.stepsExecuted || 0} bước${shotsCount ? ` • ${shotsCount} ảnh chụp` : ''})
+            </strong>
+            ${r.error ? `<span style="font-size:11px;color:#fca5a5;">${escapeHtml(r.error)}</span>` : ''}
+          </div>
+          ${healedHtml}
+          <div class="ai-log-box">${logsHtml || 'Không có log'}</div>
+          ${extractedHtml}
+        </div>
+      `;
+    }
+
+    async function deleteSavedWorkflow(wfId) {
+      if (!confirm('Xóa workflow này?')) return;
+      try {
+        await fetch(`/api/v1/ai/workflows/${encodeURIComponent(wfId)}`, { method: 'DELETE' });
+        if (activeWorkflowObj && activeWorkflowObj.id === wfId) {
+          activeWorkflowObj = null;
+          const prev = document.getElementById('workflowStepsPreview');
+          if (prev) prev.style.display = 'none';
+        }
+        await loadAiWorkflows();
+        showToast('✓ Đã xóa Workflow');
+      } catch (err) {
+        showToast(`✕ Lỗi xóa Workflow: ${err.message}`);
+      }
+    }
+
+    // ---------- TAB 5: VISUAL EXTRACTOR ----------
+    async function loadExtractorPresets() {
+      try {
+        const res = await fetch('/api/v1/ai/extract/presets').then((r) => r.json());
+        if (!res.ok || !Array.isArray(res.presets)) return;
+        extractorPresetsCache = res.presets;
+        const container = document.getElementById('extractorPresetChips');
+        if (!container) return;
+        container.innerHTML = extractorPresetsCache.map((p) => `
+          <button type="button" class="hint-example-chip" onclick="applyExtractorPreset('${escapeJs(p.id)}')">
+            🏷️ <strong>${escapeHtml(p.label)}</strong> (${escapeHtml(p.mode.toUpperCase())}) — <code>${escapeHtml((p.fields || []).join(', '))}</code>
+          </button>
+        `).join('');
+        const fEl = document.getElementById('extractorFields');
+        if (fEl && !fEl.value.trim() && extractorPresetsCache[0]) {
+          fEl.value = (extractorPresetsCache[0].fields || []).join(', ');
+        }
+      } catch (err) {
+        console.error('Failed to load extractor presets:', err);
+      }
+    }
+
+    function applyExtractorPreset(presetId) {
+      const preset = extractorPresetsCache.find((p) => p.id === presetId);
+      if (!preset) return;
+      const fEl = document.getElementById('extractorFields');
+      const mEl = document.getElementById('extractorMode');
+      const uEl = document.getElementById('extractorUrls');
+      if (fEl) fEl.value = (preset.fields || []).join(', ');
+      if (mEl) mEl.value = preset.mode || 'dom';
+      if (uEl && Array.isArray(preset.sampleUrls)) uEl.value = preset.sampleUrls.join('\n');
+      showToast(`✓ Đã điền Schema mẫu: ${preset.label}`);
+    }
+
+    async function runAiExtractor() {
+      const box = document.getElementById('extractorProfileList');
+      const profileIds = box ? Array.from(box.querySelectorAll('input[type="checkbox"]:checked')).map((c) => c.value) : [];
+      const urls = (document.getElementById('extractorUrls')?.value || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      const fields = (document.getElementById('extractorFields')?.value || '').split(',').map((s) => s.trim()).filter(Boolean);
+      const mode = document.getElementById('extractorMode')?.value || 'dom';
+
+      if (profileIds.length === 0) { showToast('⚠️ Chọn ít nhất 1 profile'); return; }
+      if (urls.length === 0) { showToast('⚠️ Nhập ít nhất 1 URL (http/https)'); return; }
+      if (fields.length === 0) { showToast('⚠️ Nhập ít nhất 1 trường dữ liệu'); return; }
+
+      const btn = document.getElementById('btnRunExtractor');
+      const resBox = document.getElementById('extractorResultContainer');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang trích xuất...'; }
+      if (resBox) {
+        resBox.style.display = 'block';
+        resBox.innerHTML = '<div class="ai-section-box" style="font-size:12px;color:var(--text-muted);">⏳ Đang mở trình duyệt và trích xuất dữ liệu qua các profile...</div>';
+      }
+      try {
+        const res = await fetch('/api/v1/ai/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profileIds, urls, fields, mode })
+        }).then((r) => r.json());
+        if (res.ok && res.result) {
+          lastExtractorResult = res.result;
+          renderExtractorResults(res.result);
+        } else if (resBox) {
+          resBox.innerHTML = `<div class="ai-section-box" style="color:#fca5a5;font-size:12px;">✕ Lỗi trích xuất: ${escapeHtml(res.error || 'Unknown')}</div>`;
+        }
+      } catch (err) {
+        if (resBox) {
+          resBox.innerHTML = `<div class="ai-section-box" style="color:#fca5a5;font-size:12px;">✕ Lỗi kết nối: ${escapeHtml(err.message)}</div>`;
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '👁️ Bắt đầu Trích xuất'; }
+      }
+    }
+
+    function renderExtractorResults(result) {
+      const box = document.getElementById('extractorResultContainer');
+      if (!box) return;
+      box.style.display = 'block';
+      const cols = Array.isArray(result.fields) ? result.fields : [];
+      const rows = Array.isArray(result.rows) ? result.rows : [];
+      const errs = Array.isArray(result.errors) ? result.errors : [];
+
+      const headerHtml = `<th>URL</th>${cols.map((c) => `<th>${escapeHtml(c)}</th>`).join('')}`;
+      const bodyHtml = rows.length === 0
+        ? `<tr><td colspan="${cols.length + 1}" style="text-align:center;color:var(--text-muted);">Không có dòng dữ liệu nào.</td></tr>`
+        : rows.map((row) => `
+            <tr>
+              <td class="mono" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(row._url || row.url || '')}">${escapeHtml(row._url || row.url || '')}</td>
+              ${cols.map((c) => `<td style="max-width:200px;word-break:break-word;">${escapeHtml(row[c] ?? '')}</td>`).join('')}
+            </tr>
+          `).join('');
+
+      const errsHtml = errs.length > 0
+        ? `<div style="margin-top:8px;font-size:11px;color:#fca5a5;">⚠️ ${errs.length} URL lỗi: ${errs.map((e) => `${escapeHtml(e.url)} (${escapeHtml(e.error)})`).join(' | ')}</div>`
+        : '';
+
+      box.innerHTML = `
+        <div class="ai-section-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+            <div>
+              <strong style="font-size:13px;">📊 Kết quả trích xuất (${rows.length} dòng)</strong>
+              <span class="badge" style="margin-left:6px;">Mode: ${escapeHtml((result.mode || 'dom').toUpperCase())}</span>
+              <span class="badge" style="margin-left:4px;">${result.usedLlm ? 'LLM' : 'Offline Metadata'}</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-success" type="button" onclick="downloadExtractorCsv()">⬇ Tải CSV</button>
+              <button class="btn btn-sm" type="button" onclick="downloadExtractorJson()">⬇ Tải JSON</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="ai-mini-table">
+              <thead><tr>${headerHtml}</tr></thead>
+              <tbody>${bodyHtml}</tbody>
+            </table>
+          </div>
+          ${errsHtml}
+        </div>
+      `;
+    }
+
+    function triggerBlobDownload(content, filename, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function downloadExtractorCsv() {
+      if (!lastExtractorResult || !lastExtractorResult.csv) return;
+      triggerBlobDownload(lastExtractorResult.csv, `vtn_extract_${Date.now()}.csv`, 'text/csv;charset=utf-8;');
+    }
+
+    function downloadExtractorJson() {
+      if (!lastExtractorResult) return;
+      triggerBlobDownload(JSON.stringify(lastExtractorResult.rows || [], null, 2), `vtn_extract_${Date.now()}.json`, 'application/json;charset=utf-8;');
+    }
+
+    // ---------- TAB 6: MATRIX PLANNER ----------
+    function applyMatrixExample(goal, count, platform, region) {
+      const gEl = document.getElementById('matrixGoal');
+      const cEl = document.getElementById('matrixCount');
+      const pEl = document.getElementById('matrixPlatform');
+      const rEl = document.getElementById('matrixRegion');
+      if (gEl) gEl.value = goal;
+      if (cEl) cEl.value = String(count);
+      if (pEl) pEl.value = platform;
+      if (rEl) rEl.value = region;
+      showToast(`✓ Đã điền mục tiêu mẫu (${count} profile ${platform} / ${region})`);
+    }
+
+    async function generateAiMatrixPlan() {
+      const goal = (document.getElementById('matrixGoal')?.value || '').trim();
+      const count = Number(document.getElementById('matrixCount')?.value || 4);
+      const platform = document.getElementById('matrixPlatform')?.value || 'General';
+      const region = document.getElementById('matrixRegion')?.value || 'US';
+      const proxiesText = document.getElementById('matrixProxies')?.value || '';
+
+      const btn = document.getElementById('btnGenMatrix');
+      const box = document.getElementById('matrixPlanContainer');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang lập ma trận...'; }
+      if (box) {
+        box.style.display = 'block';
+        box.innerHTML = '<div class="ai-section-box" style="font-size:12px;color:var(--text-muted);">⏳ Đang tính toán phân bổ 19+ Blueprints phần cứng chống trùng lặp...</div>';
+      }
+      try {
+        const res = await fetch('/api/v1/ai/matrix/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ goal, count, platform, region, proxiesText })
+        }).then((r) => r.json());
+        if (res.ok && res.plan) {
+          currentMatrixItems = Array.isArray(res.plan.items) ? res.plan.items : [];
+          renderMatrixPlan(res.plan);
+        } else if (box) {
+          box.innerHTML = `<div class="ai-section-box" style="color:#fca5a5;font-size:12px;">✕ Lỗi lập kế hoạch: ${escapeHtml(res.error || 'Unknown')}</div>`;
+        }
+      } catch (err) {
+        if (box) {
+          box.innerHTML = `<div class="ai-section-box" style="color:#fca5a5;font-size:12px;">✕ Lỗi kết nối: ${escapeHtml(err.message)}</div>`;
+        }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🧩 Lập Kế Hoạch Ma Trận'; }
+      }
+    }
+
+    function updateMatrixItemName(idx, val) {
+      if (currentMatrixItems[idx]) {
+        currentMatrixItems[idx].name = String(val || '').trim() || currentMatrixItems[idx].name;
+      }
+    }
+
+    function renderMatrixPlan(plan) {
+      const box = document.getElementById('matrixPlanContainer');
+      if (!box) return;
+      box.style.display = 'block';
+      const items = currentMatrixItems;
+      const rowsHtml = items.map((item, idx) => `
+        <tr>
+          <td>
+            <input type="text" value="${escapeHtml(item.name)}" onchange="updateMatrixItemName(${idx}, this.value)" style="width:140px;padding:4px 7px;font-size:12px;" />
+            <div class="subtext">${escapeHtml(item.groupName || '')}</div>
+          </td>
+          <td>
+            <span class="badge ${item.os === 'macOS' ? 'badge-mac' : 'badge-win'}">${escapeHtml(item.os)}</span>
+            <div class="subtext">${escapeHtml(item.blueprintId)}</div>
+          </td>
+          <td class="mono">
+            ${escapeHtml(item.hardwareConcurrency)}C / ${escapeHtml(item.deviceMemory)}G<br />
+            <span class="subtext">${escapeHtml(String(item.screenSize || '').replace(',', 'x'))}</span>
+          </td>
+          <td class="mono">
+            ${escapeHtml(item.timeZone)}<br />
+            <span class="subtext">${escapeHtml(item.proxyDisplay || 'Direct')}</span>
+          </td>
+          <td style="font-size:11px;color:var(--text-muted);">${escapeHtml(item.rationale || '')}</td>
+        </tr>
+      `).join('');
+
+      box.innerHTML = `
+        <div class="ai-section-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+            <div>
+              <strong style="font-size:13px;">📋 Bản xem trước Ma trận (${items.length} Profile)</strong>
+              <span class="badge" style="margin-left:6px;">${plan.usedLlm ? 'AI Planned' : 'Deterministic Anti-Collision'}</span>
+              <div class="subtext">${escapeHtml(plan.summary || '')}</div>
+            </div>
+            <button class="btn btn-primary" type="button" id="btnApplyMatrix" onclick="applyCurrentMatrixPlan()">✅ Tạo toàn bộ dàn Profile</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="ai-mini-table">
+              <thead><tr><th>Tên Profile</th><th>OS / Blueprint</th><th>Phần cứng</th><th>Timezone / Proxy</th><th>Lý do phân bổ</th></tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    async function applyCurrentMatrixPlan() {
+      if (!currentMatrixItems.length) return;
+      const btn = document.getElementById('btnApplyMatrix');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Đang tạo dàn Profile...'; }
+      try {
+        const res = await fetch('/api/v1/ai/matrix/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: currentMatrixItems })
+        }).then((r) => r.json());
+        if (res.ok) {
+          showToast(`✅ Đã tạo thành công ${res.createdCount} profile chống trùng vân tay!`);
+          await loadProfiles();
+          syncAiProfileSelectors();
+        } else {
+          showToast(`✕ Lỗi tạo dàn Profile: ${res.error || 'Unknown'}`);
+        }
+      } catch (err) {
+        showToast(`✕ Lỗi kết nối: ${err.message}`);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '✅ Tạo toàn bộ dàn Profile'; }
+      }
+    }
+
+    const MCP_TOOL_GUIDES = {
+      vtn_list_profiles: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Liệt kê tất cả profile kèm nhóm, proxy, phần cứng và trạng thái đang chạy (cổng CDP).',
+        params: 'groupName?, runningOnly?',
+        example: 'Gọi vtn_list_profiles liệt kê tất cả profile hiện có và cho biết profile nào đang mở.'
+      },
+      vtn_list_blueprints: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Xem 19 cấu hình phần cứng mẫu (Windows/macOS, NVIDIA/Apple Silicon/AMD/Intel) để tạo profile.',
+        params: '(không cần tham số)',
+        example: 'Gọi vtn_list_blueprints để liệt kê các cấu hình phần cứng mẫu khả dụng.'
+      },
+      vtn_create_unique_profile: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Tạo profile tàng hình mới đảm bảo 0% trùng lặp vân tay (Canvas, WebGL, Audio, MAC, DeviceName).',
+        params: 'name?, groupName?, blueprintId?, proxy?, autoGeoIp?, startUrl?, notes?',
+        example: 'Dùng vtn_create_unique_profile tạo profile tên "Shop_US_01", nhóm "Ecom", bật autoGeoIp=true.'
+      },
+      vtn_update_profile: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Cập nhật tên, nhóm, proxy, autoGeoIp, startUrl, ghi chú hoặc tags cho profile đã có.',
+        params: 'profileId, name?, groupName?, proxy?, autoGeoIp?, startUrl?, notes?, tags?',
+        example: 'Dùng vtn_update_profile cập nhật proxy mới và bật autoGeoIp=true cho profile đầu tiên.'
+      },
+      vtn_delete_profile: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Xóa vĩnh viễn profile và dọn sạch thư mục dữ liệu Chromium cục bộ (hỗ trợ force=true nếu đang mở).',
+        params: 'profileId, force?',
+        example: 'Dùng vtn_delete_profile xóa profile thử nghiệm "Test_Agy_01" với force=true.'
+      },
+      vtn_open_profile: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Mở trình duyệt tàng hình Chromium 151 cho profile chỉ định và trả về cổng CDP.',
+        params: 'profileId, headless?',
+        example: 'Gọi vtn_open_profile để mở profile đầu tiên ở chế độ hiển thị cửa sổ.'
+      },
+      vtn_close_profile: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Đóng trình duyệt của profile đang chạy an toàn (tự động đồng bộ Cloudflare R2 và nhả lock nếu bật).',
+        params: 'profileId',
+        example: 'Gọi vtn_close_profile để đóng profile đang chạy và đồng bộ dữ liệu an toàn.'
+      },
+      vtn_check_proxy: {
+        group: 'profile',
+        groupLabel: 'Profile & Proxy',
+        viDesc: 'Kiểm tra kết nối proxy và lấy IP đầu ra, quốc gia, thành phố, múi giờ và nhà mạng ISP.',
+        params: 'proxy',
+        example: 'Dùng vtn_check_proxy kiểm tra tốc độ, IP đầu ra và múi giờ của proxy socks5://127.0.0.1:1080.'
+      },
+      vtn_probe_fingerprint: {
+        group: 'cloud',
+        groupLabel: 'Vân tay & Cloud R2',
+        viDesc: 'Chạy CDP Fingerprint Probe trực tiếp trên profile đang mở để kiểm tra WebGL, Canvas, Timezone và [native code].',
+        params: 'profileId',
+        example: 'Chạy vtn_probe_fingerprint trên profile đang mở để kiểm tra lộ webdriver và tính nguyên bản [native code].'
+      },
+      vtn_cloud_sync: {
+        group: 'cloud',
+        groupLabel: 'Vân tay & Cloud R2',
+        viDesc: 'Quản lý đồng bộ đa máy qua Cloudflare R2: xem trạng thái, đồng bộ tất cả, hoặc tải lên/tải xuống 1 profile.',
+        params: 'action (status|sync_all|upload|download), profileId?',
+        example: 'Gọi vtn_cloud_sync với action="status" kiểm tra kết nối R2, sau đó chạy action="sync_all" để đồng bộ.'
+      },
+      vtn_list_pages: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Liệt kê tất cả các tab/trang đang mở trong profile kèm targetIndex và targetId.',
+        params: 'profileId',
+        example: 'Gọi vtn_list_pages xem danh sách các tab đang mở trong profile hiện tại.'
+      },
+      vtn_new_tab: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Mở thêm một tab mới trong profile đang chạy qua CDP (mặc định about:blank hoặc URL chỉ định).',
+        params: 'profileId, url?',
+        example: 'Dùng vtn_new_tab mở thêm tab mới tới https://iphey.com trên profile đang chạy.'
+      },
+      vtn_close_tab: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Đóng một tab cụ thể theo targetIndex hoặc targetId (không cho đóng tab cuối cùng).',
+        params: 'profileId, targetIndex?, targetId?',
+        example: 'Dùng vtn_close_tab đóng tab số 1 (targetIndex=1) trong profile đang chạy.'
+      },
+      vtn_navigate: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Điều hướng tab của profile đang chạy tới địa chỉ http/https và chờ trang tải.',
+        params: 'profileId, url, waitMs?, targetIndex?',
+        example: 'Dùng vtn_navigate đưa profile đang mở tới https://iphey.com và đợi 4000ms.'
+      },
+      vtn_wait_for_selector: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Chờ cho tới khi phần tử khớp CSS selector xuất hiện trong DOM (tối đa 60 giây).',
+        params: 'profileId, selector, timeoutMs?, targetIndex?',
+        example: 'Gọi vtn_wait_for_selector đợi phần tử "form button[type=submit]" xuất hiện tối đa 15000ms.'
+      },
+      vtn_page_snapshot: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Chụp cấu trúc trang gọn nhẹ: URL, tiêu đề, văn bản hiển thị và danh sách phần tử tương tác kèm CSS selector.',
+        params: 'profileId, maxTextChars?, maxElements?, targetIndex?',
+        example: 'Gọi vtn_page_snapshot đọc nội dung trang hiện tại và liệt kê các nút/ô nhập liệu có thể bấm.'
+      },
+      vtn_click: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Nhấp chuột vào phần tử trên trang theo CSS selector (lấy từ vtn_page_snapshot).',
+        params: 'profileId, selector, targetIndex?',
+        example: 'Dùng vtn_click bấm vào nút "button[type=submit]" trên tab đang mở.'
+      },
+      vtn_type: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Nhập văn bản vào ô input, textarea hoặc contenteditable (hỗ trợ xóa cũ và bấm Enter).',
+        params: 'profileId, selector, text, clear?, pressEnter?, targetIndex?',
+        example: 'Dùng vtn_type nhập "VTN Anti-Browser" vào ô "input[name=q]" và bật pressEnter=true.'
+      },
+      vtn_press_key: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Gửi phím bấm bàn phím (Enter, Escape, Tab, Backspace, ArrowDown, Space hoặc ký tự đơn).',
+        params: 'profileId, key, targetIndex?',
+        example: 'Dùng vtn_press_key gửi phím "Enter" để xác nhận form đang chọn.'
+      },
+      vtn_select_option: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Chọn một mục trong thẻ <select> theo value hoặc nhãn hiển thị label và kích hoạt sự kiện change.',
+        params: 'profileId, selector, value?, label?, targetIndex?',
+        example: 'Dùng vtn_select_option chọn mục có label="United States" trong thẻ "select[name=country]".'
+      },
+      vtn_scroll: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Cuộn trang lên hoặc xuống theo số pixel chỉ định trên tab đang mở.',
+        params: 'profileId, direction?, amount?, targetIndex?',
+        example: 'Gọi vtn_scroll cuộn xuống (direction="down") 800px để xem thêm nội dung bên dưới.'
+      },
+      vtn_screenshot: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Chụp ảnh màn hình tab đang mở (viewport hoặc toàn trang fullPage) trả về hình ảnh để AI kiểm tra trực quan.',
+        params: 'profileId, fullPage?, format?, targetIndex?',
+        example: 'Gọi vtn_screenshot với fullPage=true chụp toàn bộ trang hiện tại cho anh xem.'
+      },
+      vtn_evaluate_js: {
+        group: 'cdp',
+        groupLabel: 'Trình duyệt CDP',
+        viDesc: 'Thực thi biểu thức JavaScript trực tiếp trong ngữ cảnh trang đang mở và trả về giá trị kết quả.',
+        params: 'profileId, expression, targetIndex?',
+        example: 'Dùng vtn_evaluate_js chạy "({ title: document.title, ua: navigator.userAgent })" trên tab hiện tại.'
+      },
+      vtn_get_cookies: {
+        group: 'cookie',
+        groupLabel: 'Cookie',
+        viDesc: 'Đọc toàn bộ cookie của profile đang mở qua CDP (có thể lọc theo danh sách URLs).',
+        params: 'profileId, urls?, targetIndex?',
+        example: 'Gọi vtn_get_cookies xuất toàn bộ cookie của profile đang mở và tóm tắt các domain chính.'
+      },
+      vtn_set_cookies: {
+        group: 'cookie',
+        groupLabel: 'Cookie',
+        viDesc: 'Nạp tối đa 200 cookie vào profile đang mở qua CDP Network.setCookies để khôi phục phiên đăng nhập.',
+        params: 'profileId, cookies[], targetIndex?',
+        example: 'Dùng vtn_set_cookies nạp danh sách cookie JSON vừa xuất vào profile đích rồi tải lại trang.'
+      },
+      vtn_audit_profile: {
+        group: 'ai',
+        groupLabel: 'AI Studio',
+        viDesc: 'Chạy AI Fingerprint & Stealth Auditor chấm điểm 0–100, kiểm tra rò rỉ vân tay/GeoIP và tự sửa an toàn (autoFix).',
+        params: 'profileId, platform?, checkProxy?, autoFix?',
+        example: 'Chạy vtn_audit_profile cho profile đầu tiên theo nền tảng "Facebook / Meta" với autoFix=true.'
+      },
+      vtn_warming_control: {
+        group: 'ai',
+        groupLabel: 'AI Studio',
+        viDesc: 'Điều khiển AI Account Warming nuôi nick tự nhiên: xem preset, trạng thái, bắt đầu (1–5 profile) hoặc dừng job.',
+        params: 'action (presets|status|start|stop), profileIds?, persona?, presetId?, durationMinutes?, maxSteps?, jobId?',
+        example: 'Gọi vtn_warming_control với action="presets" xem các kịch bản nuôi nick, sau đó chạy action="status".'
+      },
+      vtn_plan_matrix: {
+        group: 'ai',
+        groupLabel: 'AI Studio',
+        viDesc: 'Lập ma trận dàn 1–50 profile chống trùng phần cứng/ngôn ngữ/proxy và tùy chọn tạo hàng loạt vào SQLite (apply=true).',
+        params: 'goal, count?, platform?, region?, proxiesText?, apply?',
+        example: 'Dùng vtn_plan_matrix lập kế hoạch 5 profile Amazon US chống trùng lặp (apply=false để xem trước).'
+      }
+    };
+
+    function setMcpToolGroup(group) {
+      currentMcpToolGroup = group || 'all';
+      document.querySelectorAll('#mcpGroupFilterBar .mcp-filter-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mcpGroup === currentMcpToolGroup);
+      });
+      renderMcpToolsList();
+    }
+
+    function renderMcpToolsList() {
+      const listEl = document.getElementById('mcpToolsList');
+      if (!listEl) return;
+
+      if (!listEl.dataset.copyDelegated) {
+        listEl.dataset.copyDelegated = '1';
+        listEl.addEventListener('click', (ev) => {
+          const btn = ev.target.closest('.mcp-tool-copy-btn');
+          if (!btn || !btn.dataset.prompt) return;
+          copyTextWithToast(btn.dataset.prompt);
+        });
+      }
+
+      const apiTools = (mcpInfoCache && Array.isArray(mcpInfoCache.tools) && mcpInfoCache.tools.length)
+        ? mcpInfoCache.tools
+        : Object.keys(MCP_TOOL_GUIDES).map((name) => ({ name, description: MCP_TOOL_GUIDES[name].viDesc }));
+
+      const searchInput = document.getElementById('mcpToolSearch');
+      const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
+      const filtered = apiTools.filter((t) => {
+        const guide = MCP_TOOL_GUIDES[t.name] || {
+          group: 'cdp',
+          groupLabel: 'MCP Tool',
+          viDesc: t.description || '',
+          params: '',
+          example: `Gọi tool ${t.name} trên vtn-anti-browser.`
+        };
+        if (currentMcpToolGroup !== 'all' && guide.group !== currentMcpToolGroup) return false;
+        if (!query) return true;
+        const haystack = `${t.name} ${guide.groupLabel} ${guide.viDesc} ${t.description || ''} ${guide.params} ${guide.example}`.toLowerCase();
+        return haystack.includes(query);
+      });
+
+      const countEl = document.getElementById('mcpToolCount');
+      if (countEl) {
+        countEl.textContent = filtered.length === apiTools.length
+          ? String(apiTools.length)
+          : `${filtered.length}/${apiTools.length}`;
+      }
+
+      if (!filtered.length) {
+        listEl.innerHTML = `<div style="grid-column: 1 / -1; padding: 14px; text-align: center; font-size: 12px; color: var(--text-muted);">Không tìm thấy MCP tool nào khớp với bộ lọc hiện tại.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((t) => {
+        const guide = MCP_TOOL_GUIDES[t.name] || {
+          group: 'cdp',
+          groupLabel: 'MCP Tool',
+          viDesc: t.description || '',
+          params: '',
+          example: `Gọi tool ${t.name} trên vtn-anti-browser.`
+        };
+        const badgeClass = `mcp-badge-${guide.group}`;
+        const paramsText = guide.params || '(không cần tham số)';
+        return `
+          <div class="mcp-tool-item">
+            <div class="mcp-tool-head">
+              <div class="mcp-tool-name">${escapeHtml(t.name)}</div>
+              <span class="mcp-tool-badge ${escapeHtml(badgeClass)}">${escapeHtml(guide.groupLabel)}</span>
+            </div>
+            <div class="mcp-tool-desc">${escapeHtml(guide.viDesc)}</div>
+            <div class="mcp-tool-footer">
+              <span class="mcp-tool-params" title="Tham số: ${escapeHtml(paramsText)}">${escapeHtml(paramsText)}</span>
+              <button type="button" class="mcp-tool-copy-btn" data-prompt="${escapeHtml(guide.example)}" title="${escapeHtml(guide.example)}">📋 Copy ví dụ</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadMcpInfo() {
+      try {
+        const res = await fetch('/api/v1/mcp/info').then((r) => r.json());
+        if (!res || !res.ok) {
+          renderMcpToolsList();
+          return;
+        }
+        mcpInfoCache = res;
+
+        const pathEl = document.getElementById('mcpAgyPath');
+        if (pathEl && res.antigravityConfigPath) pathEl.textContent = res.antigravityConfigPath;
+
+        const badge = document.getElementById('mcpStatusBadge');
+        if (badge && res.stats) {
+          badge.textContent = `● MCP ${res.stats.protocolVersion} • ${res.stats.toolCount} Tools`;
+        }
+
+        const hintCountEl = document.getElementById('mcpHintToolCount');
+        if (hintCountEl) hintCountEl.textContent = `${(res.tools || []).length} tools`;
+
+        const statsEl = document.getElementById('mcpStatsSummary');
+        if (statsEl && res.stats) {
+          statsEl.textContent = `Lượt gọi: ${res.stats.totalCalls || 0} • Phiên MCP: ${res.stats.activeSessions || 0}`;
+        }
+
+        renderMcpToolsList();
+        renderMcpConfigPreview();
+      } catch (err) {
+        const box = document.getElementById('mcpConfigPreview');
+        if (box) box.textContent = `Không tải được thông tin MCP: ${err.message}`;
+        renderMcpToolsList();
+      }
+    }
+
+    function setMcpConfigMode(mode) {
+      currentMcpConfigMode = mode === 'stdio' ? 'stdio' : 'http';
+      const btnHttp = document.getElementById('btnMcpModeHttp');
+      const btnStdio = document.getElementById('btnMcpModeStdio');
+      if (btnHttp) btnHttp.classList.toggle('btn-primary', currentMcpConfigMode === 'http');
+      if (btnStdio) btnStdio.classList.toggle('btn-primary', currentMcpConfigMode === 'stdio');
+      renderMcpConfigPreview();
+    }
+
+    function renderMcpConfigPreview() {
+      const box = document.getElementById('mcpConfigPreview');
+      if (!box || !mcpInfoCache) return;
+      const cfg = currentMcpConfigMode === 'stdio'
+        ? mcpInfoCache.antigravityStdioConfig
+        : mcpInfoCache.antigravityHttpConfig;
+      box.textContent = JSON.stringify(cfg, null, 2);
+    }
+
+    async function copyTextWithToast(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('✓ Đã sao chép vào Clipboard');
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('✓ Đã sao chép vào Clipboard');
+      }
+    }
+
+    function copyCurrentMcpConfig() {
+      const box = document.getElementById('mcpConfigPreview');
+      if (!box) return;
+      copyTextWithToast(box.textContent);
+    }
+
+    async function testMcpHandshake() {
+      const btn = document.getElementById('btnTestMcp');
+      const out = document.getElementById('mcpTestResult');
+      let sid = null;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Đang kiểm tra...';
+      }
+      try {
+        const initRes = await fetch('/mcp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2025-03-26',
+              capabilities: {},
+              clientInfo: { name: 'vtn-dashboard-tester', version: '1.0.0' }
+            }
+          })
+        });
+        sid = initRes.headers.get('mcp-session-id');
+        const initJson = await initRes.json();
+
+        const toolsRes = await fetch('/mcp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            ...(sid ? { 'Mcp-Session-Id': sid } : {})
+          },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} })
+        }).then((r) => r.json());
+
+        const toolCount = toolsRes?.result?.tools?.length || 0;
+        if (out) {
+          out.style.display = 'block';
+          out.style.background = 'rgba(16, 185, 129, 0.14)';
+          out.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+          out.style.color = '#6ee7b7';
+          out.textContent = `✓ MCP Handshake thành công! Server: ${initJson?.result?.serverInfo?.name} v${initJson?.result?.serverInfo?.version} | Protocol: ${initJson?.result?.protocolVersion} | Session: ${sid || 'stateless'} | Tools: ${toolCount}`;
+        }
+      } catch (err) {
+        if (out) {
+          out.style.display = 'block';
+          out.style.background = 'rgba(239, 68, 68, 0.14)';
+          out.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+          out.style.color = '#fca5a5';
+          out.textContent = `✕ Lỗi kiểm tra MCP: ${err.message}`;
+        }
+      } finally {
+        if (sid) {
+          try {
+            await fetch('/mcp', {
+              method: 'DELETE',
+              headers: { 'Mcp-Session-Id': sid }
+            });
+          } catch {}
+        }
+        try {
+          await loadMcpInfo();
+        } catch {}
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '⚡ Test MCP Handshake';
+        }
+      }
+    }
 
     init();
   </script>

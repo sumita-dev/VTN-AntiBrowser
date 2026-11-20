@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Build artifacts
+dist/
+
 # Chromium binaries & executables (Core C++ browser engine > 100MB)
 bin/
 

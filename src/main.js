@@ -15,6 +15,7 @@ const { createApiServer } = require('./api/server');
 const { buildProfileLaunchArtifacts } = require('./core/config-builder');
 const { generateFingerprint } = require('./core/fingerprint-gen');
 const { getFreeLocalPort } = require('./core/proxy-tunnel');
+const { IS_SEA, BIN_DIR, DATA_DIR, ensureRuntimeDirs } = require('./core/paths');
 
 const PORT = Number(process.env.VTN_PORT || process.env.VNT_PORT || 45678);
 const HOST = process.env.VTN_HOST || process.env.VNT_HOST || '127.0.0.1';
@@ -70,7 +71,7 @@ async function launchAppWindowWithFallback(dashboardUrl, browserManager, launchO
         const cloudStatus = await browserManager.cloudSync.hasKernelOnCloud();
         if (cloudStatus && cloudStatus.exists) {
           console.log('[VTN Anti-Browser] Found kernel package on R2. Downloading & unpacking system/bin_151-0007.tar.gz...');
-          const binBaseDir = path.resolve(__dirname, '..', 'bin');
+          const binBaseDir = BIN_DIR;
           const dlRes = await browserManager.cloudSync.downloadKernel(binBaseDir);
           if (dlRes && dlRes.chromeExe && fs.existsSync(dlRes.chromeExe)) {
             chromeExe = dlRes.chromeExe;
@@ -123,7 +124,7 @@ async function openManagerAppWindow(dashboardUrl, chromeExe, launchOpts = {}) {
     throw new Error(`Invalid protocol for dashboardUrl: "${parsedUrl.protocol}". Only "http:" and "https:" are allowed.`);
   }
 
-  const exe = chromeExe || path.resolve(__dirname, '..', 'bin', '151-0007', 'chrome.exe');
+  const exe = chromeExe || path.join(BIN_DIR, '151-0007', 'chrome.exe');
   if (!fs.existsSync(exe)) {
     if (launchOpts.fallbackToSystemBrowser) {
       console.log(`[VTN Anti-Browser] Native kernel not found. Opening default system browser at: ${parsedUrl.href}`);
@@ -146,7 +147,7 @@ async function openManagerAppWindow(dashboardUrl, chromeExe, launchOpts = {}) {
     throw new Error(`Chromium executable not found at: ${exe}`);
   }
 
-  const uiProfileDir = launchOpts.userDataDir || path.resolve(__dirname, '..', 'data', '_manager_ui_profile');
+  const uiProfileDir = launchOpts.userDataDir || path.join(DATA_DIR, '_manager_ui_profile');
   fs.mkdirSync(uiProfileDir, { recursive: true });
 
   const uiCdpPort = launchOpts.cdpPort || (await getFreeLocalPort());
@@ -271,6 +272,7 @@ async function openManagerAppWindow(dashboardUrl, chromeExe, launchOpts = {}) {
 }
 
 async function startVntBrowser(options = {}) {
+  ensureRuntimeDirs();
   const port = options.port !== undefined ? options.port : PORT;
   const db = new ProfileDatabase(options.dbPath);
   const browserManager = new BrowserManager({
@@ -418,7 +420,8 @@ async function startVntBrowser(options = {}) {
 }
 
 if (require.main === module) {
-  const shouldOpenApp = process.argv.includes('--app-window');
+  const hasNoWindow = process.argv.includes('--no-window');
+  const shouldOpenApp = process.argv.includes('--app-window') || (IS_SEA && !hasNoWindow);
   startVntBrowser({ openAppWindow: shouldOpenApp })
     .then((result) => {
       if (result.isExistingInstance) {

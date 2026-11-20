@@ -12,6 +12,7 @@
  */
 
 const assert = require('assert');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -27,6 +28,15 @@ const { fetchCdpJson } = require('../src/core/browser-manager');
 const { startVntBrowser, openManagerAppWindow, launchAppWindowWithFallback } = require('../src/main');
 const { R2Client } = require('../src/core/r2-client');
 const { CloudSync } = require('../src/core/cloud-sync');
+const { createApiServer } = require('../src/api/server');
+const { AiClient } = require('../src/core/ai-client');
+const { APP_VERSION, compareSemver } = require('../src/core/version');
+const {
+  APP_BINARY_KEY,
+  publishRelease,
+  downloadAndStageUpdate,
+  rollbackUpdate
+} = require('../src/core/app-updater');
 
 async function postJson(baseUrl, route, body) {
   const res = await fetch(`${baseUrl}${route}`, {
@@ -597,6 +607,610 @@ async function runTests() {
       /Invalid protocol/
     );
     console.log('  [PASS] launchAppWindowWithFallback URL protocol validation & security hardening verified.');
+
+    // =========================================================================
+    // 7. ANTIDETECT MCP SERVER (STREAMABLE HTTP 2025-03-26 FOR ANTIGRAVITY 2.0)
+    // =========================================================================
+    console.log('\n[Test 7] Verifying Antidetect MCP Server (/mcp & /api/v1/mcp/info)...');
+
+    // 7.1 GET /api/v1/mcp/info
+    const mcpInfo = await fetch(`${app.url}/api/v1/mcp/info`).then((r) => r.json());
+    assert.strictEqual(mcpInfo.ok, true);
+    assert(mcpInfo.endpoint.endsWith('/mcp'), 'MCP endpoint must end with /mcp');
+    assert.strictEqual(mcpInfo.antigravityHttpConfig.mcpServers['vtn-anti-browser'].url, mcpInfo.endpoint);
+    assert.strictEqual(mcpInfo.antigravityStdioConfig.mcpServers['vtn-anti-browser'].command, 'node');
+    assert(mcpInfo.tools.length >= 28, `Expected >= 28 MCP tools, got ${mcpInfo.tools.length}`);
+
+    // 7.2 POST /mcp initialize
+    const initHttpRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-03-26',
+          capabilities: {},
+          clientInfo: { name: 'antigravity-e2e', version: '2.0.0' }
+        }
+      })
+    });
+    assert.strictEqual(initHttpRes.status, 200);
+    const mcpSessionId = initHttpRes.headers.get('mcp-session-id');
+    assert(mcpSessionId && mcpSessionId.length > 10, 'initialize must return Mcp-Session-Id header');
+    const initJson = await initHttpRes.json();
+    assert.strictEqual(initJson.result.protocolVersion, '2025-03-26');
+    assert.strictEqual(initJson.result.serverInfo.name, 'vtn-anti-browser');
+
+    // 7.3 POST /mcp notifications/initialized -> 202 Accepted
+    const notifRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Mcp-Session-Id': mcpSessionId
+      },
+      body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })
+    });
+    assert.strictEqual(notifRes.status, 202);
+
+    // 7.4 POST /mcp tools/list
+    const toolsListRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Mcp-Session-Id': mcpSessionId },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} })
+    }).then((r) => r.json());
+    const toolNames = toolsListRes.result.tools.map((t) => t.name);
+    assert(toolNames.length >= 28, `Expected >= 28 tools from tools/list, got ${toolNames.length}`);
+    assert(toolNames.includes('vtn_list_profiles'));
+    assert(toolNames.includes('vtn_create_unique_profile'));
+    assert(toolNames.includes('vtn_open_profile'));
+    assert(toolNames.includes('vtn_page_snapshot'));
+    assert(toolNames.includes('vtn_screenshot'));
+    assert(toolNames.includes('vtn_update_profile'));
+    assert(toolNames.includes('vtn_delete_profile'));
+    assert(toolNames.includes('vtn_cloud_sync'));
+    assert(toolNames.includes('vtn_new_tab'));
+    assert(toolNames.includes('vtn_close_tab'));
+    assert(toolNames.includes('vtn_wait_for_selector'));
+    assert(toolNames.includes('vtn_press_key'));
+    assert(toolNames.includes('vtn_select_option'));
+    assert(toolNames.includes('vtn_get_cookies'));
+    assert(toolNames.includes('vtn_set_cookies'));
+    assert(toolNames.includes('vtn_audit_profile'));
+    assert(toolNames.includes('vtn_warming_control'));
+    assert(toolNames.includes('vtn_plan_matrix'));
+
+    // 7.5 POST /mcp tools/call -> vtn_create_unique_profile & vtn_list_profiles
+    const createCallRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Mcp-Session-Id': mcpSessionId },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: {
+          name: 'vtn_create_unique_profile',
+          arguments: { name: 'MCP_Agy_Test', groupName: 'MCP_Test' }
+        }
+      })
+    }).then((r) => r.json());
+    assert.strictEqual(createCallRes.result.isError, false);
+    const createdByMcp = JSON.parse(createCallRes.result.content[0].text);
+    assert.strictEqual(createdByMcp.name, 'MCP_Agy_Test');
+
+    const listCallRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Mcp-Session-Id': mcpSessionId },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 4,
+        method: 'tools/call',
+        params: { name: 'vtn_list_profiles', arguments: { groupName: 'MCP_Test' } }
+      })
+    }).then((r) => r.json());
+    assert.strictEqual(listCallRes.result.isError, false);
+    const listedByMcp = JSON.parse(listCallRes.result.content[0].text);
+    assert.strictEqual(listedByMcp.count, 1);
+    assert.strictEqual(listedByMcp.profiles[0].id, createdByMcp.id);
+
+    // 7.6 POST /mcp resources/list & resources/read
+    const resList = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Mcp-Session-Id': mcpSessionId },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'resources/list', params: {} })
+    }).then((r) => r.json());
+    assert(resList.result.resources.some((r) => r.uri === 'vtn://profiles'));
+
+    const resRead = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Mcp-Session-Id': mcpSessionId },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 6, method: 'resources/read', params: { uri: 'vtn://status' } })
+    }).then((r) => r.json());
+    const statusPayload = JSON.parse(resRead.result.contents[0].text);
+    assert.strictEqual(statusPayload.kernelVersion, '151.0.7922.109');
+
+    // 7.7 GET /mcp -> 405 Method Not Allowed & DELETE /mcp -> 200 OK
+    const getMcpRes = await fetch(`${app.url}/mcp`);
+    assert.strictEqual(getMcpRes.status, 405);
+    const delMcpRes = await fetch(`${app.url}/mcp`, {
+      method: 'DELETE',
+      headers: { 'Mcp-Session-Id': mcpSessionId }
+    });
+    assert.strictEqual(delMcpRes.status, 200);
+
+    // 7.8 Security & Parsing & Proxy Type Hardening assertions
+    const evilOriginRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: 'https://evil.example.com'
+      },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'ping', params: {} })
+    });
+    assert.strictEqual(evilOriginRes.status, 403, 'Cross-origin POST /mcp must return 403');
+    const evilOriginJson = await evilOriginRes.json();
+    assert.strictEqual(evilOriginJson.error.code, -32001);
+
+    const malformedJsonRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{ invalid json'
+    });
+    assert.strictEqual(malformedJsonRes.status, 400, 'Malformed JSON POST /mcp must return 400');
+    const malformedJsonBody = await malformedJsonRes.json();
+    assert.strictEqual(malformedJsonBody.error.code, -32700, 'Malformed JSON must return JSON-RPC -32700');
+
+    const socksProfileRes = await fetch(`${app.url}/mcp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 8,
+        method: 'tools/call',
+        params: {
+          name: 'vtn_create_unique_profile',
+          arguments: {
+            name: 'MCP_Socks5_Test',
+            groupName: 'MCP_Proxy_Test',
+            proxy: 'socks5://user:pass@1.2.3.4:1080'
+          }
+        }
+      })
+    }).then((r) => r.json());
+    assert.strictEqual(socksProfileRes.result.isError, false);
+    const createdSocks = JSON.parse(socksProfileRes.result.content[0].text);
+    assert.strictEqual(createdSocks.proxyMode, 'socks5');
+    const savedSocksInDb = app.db.getProfile(createdSocks.id);
+    assert.strictEqual(savedSocksInDb.proxyConfig.type, 'socks5', 'DB proxyConfig.type must preserve socks5');
+    assert.strictEqual(savedSocksInDb.proxyConfig.host, '1.2.3.4');
+    assert.strictEqual(savedSocksInDb.proxyConfig.port, 1080);
+
+    // 7.9 Test expanded MCP tools: update, cloud_sync(status), audit, warming_control(presets/status), plan_matrix(apply:false), delete
+    const callMcpTool = async (id, name, args) => {
+      return fetch(`${app.url}/mcp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id,
+          method: 'tools/call',
+          params: { name, arguments: args }
+        })
+      }).then((r) => r.json());
+    };
+
+    const updateRes = await callMcpTool(9, 'vtn_update_profile', {
+      profileId: createdByMcp.id,
+      name: 'MCP_Agy_Updated',
+      notes: 'Updated via MCP v2',
+      tags: ['mcp', 'verified'],
+      autoGeoIp: true
+    });
+    assert.strictEqual(updateRes.result.isError, false, `vtn_update_profile failed: ${updateRes.result.content[0].text}`);
+    const updatedPayload = JSON.parse(updateRes.result.content[0].text);
+    assert.strictEqual(updatedPayload.name, 'MCP_Agy_Updated');
+    assert.strictEqual(updatedPayload.notes, 'Updated via MCP v2');
+    assert.deepStrictEqual(updatedPayload.tags, ['mcp', 'verified']);
+    assert.strictEqual(updatedPayload.autoGeoIp, true);
+
+    const cloudStatusRes = await callMcpTool(10, 'vtn_cloud_sync', { action: 'status' });
+    assert.strictEqual(cloudStatusRes.result.isError, false, `vtn_cloud_sync status failed: ${cloudStatusRes.result.content[0].text}`);
+    const cloudStatusPayload = JSON.parse(cloudStatusRes.result.content[0].text);
+    assert.strictEqual(typeof cloudStatusPayload.enabled, 'boolean');
+
+    const auditMcpRes = await callMcpTool(11, 'vtn_audit_profile', {
+      profileId: createdByMcp.id,
+      platform: 'General',
+      checkProxy: false,
+      autoFix: false
+    });
+    assert.strictEqual(auditMcpRes.result.isError, false, `vtn_audit_profile failed: ${auditMcpRes.result.content[0].text}`);
+    const auditPayload = JSON.parse(auditMcpRes.result.content[0].text);
+    assert.strictEqual(auditPayload.profileId, createdByMcp.id);
+    assert.strictEqual(typeof auditPayload.score, 'number');
+    assert(Array.isArray(auditPayload.findings));
+
+    const warmPresetsRes = await callMcpTool(12, 'vtn_warming_control', { action: 'presets' });
+    assert.strictEqual(warmPresetsRes.result.isError, false);
+    const warmPresetsPayload = JSON.parse(warmPresetsRes.result.content[0].text);
+    assert(Array.isArray(warmPresetsPayload.presets) && warmPresetsPayload.presets.length >= 3);
+
+    const warmStatusRes = await callMcpTool(13, 'vtn_warming_control', { action: 'status' });
+    assert.strictEqual(warmStatusRes.result.isError, false);
+    const warmStatusPayload = JSON.parse(warmStatusRes.result.content[0].text);
+    assert(Array.isArray(warmStatusPayload.jobs));
+
+    const matrixMcpRes = await callMcpTool(14, 'vtn_plan_matrix', {
+      goal: 'US E-commerce test matrix',
+      count: 3,
+      platform: 'Amazon / eBay',
+      region: 'US',
+      apply: false
+    });
+    assert.strictEqual(matrixMcpRes.result.isError, false, `vtn_plan_matrix failed: ${matrixMcpRes.result.content[0].text}`);
+    const matrixPayload = JSON.parse(matrixMcpRes.result.content[0].text);
+    assert.strictEqual(matrixPayload.applied, null);
+    assert.strictEqual(matrixPayload.plan.count, 3);
+    assert.strictEqual(matrixPayload.plan.items.length, 3);
+
+    const deleteMcpRes = await callMcpTool(15, 'vtn_delete_profile', {
+      profileId: createdByMcp.id,
+      force: true
+    });
+    assert.strictEqual(deleteMcpRes.result.isError, false, `vtn_delete_profile failed: ${deleteMcpRes.result.content[0].text}`);
+    const deletePayload = JSON.parse(deleteMcpRes.result.content[0].text);
+    assert.strictEqual(deletePayload.deleted, true);
+    assert.strictEqual(app.db.getProfile(createdByMcp.id), null, 'Deleted profile must be removed from DB');
+
+    console.log('  [PASS] Antidetect MCP Server (Streamable HTTP 2025-03-26, 28 tools, resources, session lifecycle, security, socks5 proxy & expanded CRUD/Cloud/AI tools) verified.');
+
+    // =========================================================================
+    // 8. AI STUDIO REST API SUITE (OFFLINE VERIFICATION — 5 AI FEATURES + CONFIG)
+    // =========================================================================
+    console.log('\n[Test 8] Verifying VTN AI Studio REST API Suite (Config, Auditor, Matrix, Workflow, Warmer, Extractor)...');
+    const tempAiCfgPath = path.join(testProfilesDir, 'temp_ai_config.json');
+    const isolatedAiClient = new AiClient(tempAiCfgPath);
+    const aiServer = createApiServer({
+      db: app.db,
+      browserManager: app.browserManager,
+      aiClient: isolatedAiClient
+    });
+    await new Promise((resolve) => aiServer.listen(0, '127.0.0.1', resolve));
+    const aiBaseUrl = `http://127.0.0.1:${aiServer.address().port}`;
+
+    try {
+      // 8.1 AI Config save + secret masking + key retention when saving without apiKey
+      const initAiCfg = await fetch(`${aiBaseUrl}/api/v1/ai/config`).then((r) => r.json());
+      assert.strictEqual(initAiCfg.ok, true);
+      assert.strictEqual(initAiCfg.config.hasApiKey, false);
+      assert.strictEqual(initAiCfg.config.apiKey, undefined, 'Must never expose raw apiKey');
+
+      const saveAiCfg1 = await postJson(aiBaseUrl, '/api/v1/ai/config', {
+        provider: 'gemini',
+        model: 'gemini-2.5-flash',
+        apiKey: 'AIzaSyTestSecretKey123456789',
+        enabled: false
+      });
+      assert.strictEqual(saveAiCfg1.ok, true);
+      assert.strictEqual(saveAiCfg1.config.hasApiKey, true);
+      assert.strictEqual(saveAiCfg1.config.apiKey, undefined, 'Saved response must never leak raw apiKey');
+      assert(saveAiCfg1.config.apiKeyPreview.startsWith('AIza') && saveAiCfg1.config.apiKeyPreview.endsWith('6789'), 'apiKeyPreview must be masked');
+
+      // Update model without apiKey -> must retain previous apiKey
+      const saveAiCfg2 = await postJson(aiBaseUrl, '/api/v1/ai/config', {
+        provider: 'gemini',
+        model: 'gemini-2.5-pro',
+        enabled: false
+      });
+      assert.strictEqual(saveAiCfg2.ok, true);
+      assert.strictEqual(saveAiCfg2.config.model, 'gemini-2.5-pro');
+      assert.strictEqual(saveAiCfg2.config.hasApiKey, true, 'Must retain saved apiKey when omitted');
+      assert.strictEqual(isolatedAiClient._config.apiKey, 'AIzaSyTestSecretKey123456789');
+      assert.strictEqual(saveAiCfg2.config.apiKey, undefined);
+      console.log('  [PASS] 8.1 AI Config save, secret masking & apiKey retention verified.');
+
+      // 8.2 AI Auditor (/api/v1/ai/audit, /api/v1/ai/audit/apply-fix, /api/v1/ai/audit/logs)
+      const badAuditRes = await fetch(`${aiBaseUrl}/api/v1/ai/audit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      assert.strictEqual(badAuditRes.status, 400, 'Missing profileId must return 400');
+
+      const auditRes = await postJson(aiBaseUrl, '/api/v1/ai/audit', {
+        profileId: 'vnt_win11_rtx4090',
+        platform: 'Facebook / Meta',
+        checkProxy: false
+      });
+      assert.strictEqual(auditRes.ok, true);
+      assert(auditRes.report && typeof auditRes.report.score === 'number');
+      assert.strictEqual(auditRes.report.usedLlm, false, 'Offline audit must not invoke LLM');
+      assert(Array.isArray(auditRes.report.findings));
+
+      const applyFixRes = await postJson(aiBaseUrl, '/api/v1/ai/audit/apply-fix', {
+        profileId: 'vnt_win11_rtx4090',
+        suggestedPatch: {
+          autoGeoIp: true,
+          fingerprintPatch: {
+            timezone: 'America/Los_Angeles',
+            languages: 'en-US,en'
+          }
+        }
+      });
+      assert.strictEqual(applyFixRes.ok, true);
+      assert(applyFixRes.appliedFields.includes('autoGeoIp'));
+      assert(applyFixRes.appliedFields.includes('fingerprintPatch.timezone'));
+      assert.strictEqual(applyFixRes.profile.autoGeoIp, true);
+      assert.strictEqual(applyFixRes.profile.fingerprint.switches.TimeZone, 'America/Los_Angeles');
+
+      const auditLogsRes = await fetch(`${aiBaseUrl}/api/v1/ai/audit/logs?profileId=vnt_win11_rtx4090`).then((r) => r.json());
+      assert.strictEqual(auditLogsRes.ok, true);
+      assert(Array.isArray(auditLogsRes.logs) && auditLogsRes.logs.length >= 1, 'Audit log must be persisted');
+      console.log('  [PASS] 8.2 AI Auditor (/audit, /audit/apply-fix, /audit/logs) verified.');
+
+      // 8.3 AI Matrix Planner (/api/v1/ai/matrix/plan & /api/v1/ai/matrix/apply)
+      const planRes = await postJson(aiBaseUrl, '/api/v1/ai/matrix/plan', {
+        goal: '3 TikTok US profiles',
+        count: 3,
+        platform: 'TikTok',
+        region: 'US'
+      });
+      assert.strictEqual(planRes.ok, true);
+      assert(planRes.plan && Array.isArray(planRes.plan.items) && planRes.plan.items.length === 3);
+      assert.strictEqual(planRes.plan.usedLlm, false);
+
+      const applyMatrixRes = await postJson(aiBaseUrl, '/api/v1/ai/matrix/apply', {
+        items: planRes.plan.items
+      });
+      assert.strictEqual(applyMatrixRes.ok, true);
+      assert.strictEqual(applyMatrixRes.createdCount, 3);
+      assert.strictEqual(applyMatrixRes.profiles.length, 3);
+      const matrixCanvasSet = new Set(applyMatrixRes.profiles.map((p) => p.fingerprint.switches.CanvasMark));
+      assert.strictEqual(matrixCanvasSet.size, 3, 'Matrix profiles must have unique CanvasMarks');
+      console.log('  [PASS] 8.3 AI Matrix Planner (/matrix/plan & /matrix/apply) verified.');
+
+      // 8.4 AI Workflow (/api/v1/ai/workflow/generate, GET /api/v1/ai/workflows, DELETE /api/v1/ai/workflows/:id)
+      const genWfRes = await postJson(aiBaseUrl, '/api/v1/ai/workflow/generate', {
+        name: 'E2E HN Flow',
+        prompt: 'Mở https://news.ycombinator.com/, chờ 2 giây, cuộn xuống 600px, trích xuất nội dung và chụp ảnh màn hình.'
+      });
+      assert.strictEqual(genWfRes.ok, true);
+      assert(genWfRes.workflow && genWfRes.workflow.id);
+      assert.strictEqual(genWfRes.usedLlm, false);
+      assert(genWfRes.workflow.steps.length >= 4, 'Heuristic workflow must compile goto/wait/scroll/extract/screenshot');
+
+      const listWfRes = await fetch(`${aiBaseUrl}/api/v1/ai/workflows`).then((r) => r.json());
+      assert.strictEqual(listWfRes.ok, true);
+      assert(listWfRes.workflows.some((w) => w.id === genWfRes.workflow.id), 'Generated workflow must appear in list');
+      assert(Array.isArray(listWfRes.examples) && listWfRes.examples.length >= 3);
+
+      const delWfRes = await fetch(`${aiBaseUrl}/api/v1/ai/workflows/${encodeURIComponent(genWfRes.workflow.id)}`, {
+        method: 'DELETE'
+      }).then((r) => r.json());
+      assert.strictEqual(delWfRes.ok, true);
+      assert.strictEqual(delWfRes.deleted, true);
+      console.log('  [PASS] 8.4 AI Workflow (/workflow/generate, /workflows, DELETE /workflows/:id) verified.');
+
+      // 8.5 AI Warmer (/warm/presets, /warm/status) & Extractor (/extract/presets)
+      const warmPresetsRes = await fetch(`${aiBaseUrl}/api/v1/ai/warm/presets`).then((r) => r.json());
+      assert.strictEqual(warmPresetsRes.ok, true);
+      assert(Array.isArray(warmPresetsRes.presets) && warmPresetsRes.presets.length >= 3);
+
+      const warmStatusRes = await fetch(`${aiBaseUrl}/api/v1/ai/warm/status`).then((r) => r.json());
+      assert.strictEqual(warmStatusRes.ok, true);
+      assert(Array.isArray(warmStatusRes.jobs));
+
+      const extPresetsRes = await fetch(`${aiBaseUrl}/api/v1/ai/extract/presets`).then((r) => r.json());
+      assert.strictEqual(extPresetsRes.ok, true);
+      assert(Array.isArray(extPresetsRes.presets) && extPresetsRes.presets.length >= 2);
+      console.log('  [PASS] 8.5 AI Warmer (/warm/presets, /warm/status) & Extractor (/extract/presets) verified.');
+    } finally {
+      await new Promise((resolve) => aiServer.close(resolve));
+    }
+
+    // =========================================================================
+    // 9. R2 1-CLICK APP UPDATER (MOCK R2, SHA-256 VERIFY, TAMPER GUARD, ROLLBACK)
+    // =========================================================================
+    console.log('\n[Test 9] Verifying R2 1-Click App Updater (Semver, Publish, Check, Apply, SHA-256 Tamper Guard, Rollback)...');
+
+    // 9.1 compareSemver edge cases
+    assert.strictEqual(APP_VERSION, '1.1.0');
+    assert.strictEqual(compareSemver('1.0.0', '1.1.0'), -1);
+    assert.strictEqual(compareSemver('1.1.0', '1.0.0'), 1);
+    assert.strictEqual(compareSemver('v1.1.0', '1.1.0'), 0);
+    assert.strictEqual(compareSemver('V1.10.0', '1.2.9'), 1);
+    assert.strictEqual(compareSemver('2.0.0', '1.9.9'), 1);
+    assert.strictEqual(compareSemver('1.0', '1.0.0'), 0);
+    assert.strictEqual(compareSemver('1.1.0-beta.1', '1.1.0'), 0);
+    console.log('  [PASS] 9.1 compareSemver edge cases verified.');
+
+    // 9.2 Local in-memory mock R2 server
+    const mockR2Store = new Map();
+    const mockR2Server = http.createServer((req, res) => {
+      const reqUrl = new URL(req.url, 'http://127.0.0.1');
+      // Path format: /<bucket>/<key...>
+      const cleanPath = decodeURIComponent(reqUrl.pathname).replace(/^\/+/, '');
+      const slashIdx = cleanPath.indexOf('/');
+      const key = slashIdx >= 0 ? cleanPath.slice(slashIdx + 1) : '';
+
+      if (req.method === 'PUT') {
+        const chunks = [];
+        req.on('data', (c) => chunks.push(c));
+        req.on('end', () => {
+          const buf = Buffer.concat(chunks);
+          mockR2Store.set(key, {
+            body: buf,
+            contentType: req.headers['content-type'] || 'application/octet-stream'
+          });
+          res.writeHead(200, { ETag: '"mock-etag"' });
+          res.end();
+        });
+        return;
+      }
+
+      if (req.method === 'GET' || req.method === 'HEAD') {
+        if (!mockR2Store.has(key)) {
+          res.writeHead(404);
+          return res.end('Not Found');
+        }
+        const entry = mockR2Store.get(key);
+        res.writeHead(200, {
+          'Content-Type': entry.contentType,
+          'Content-Length': String(entry.body.length),
+          ETag: '"mock-etag"'
+        });
+        return res.end(req.method === 'HEAD' ? undefined : entry.body);
+      }
+
+      if (req.method === 'DELETE') {
+        mockR2Store.delete(key);
+        res.writeHead(204);
+        return res.end();
+      }
+
+      res.writeHead(405);
+      res.end();
+    });
+
+    await new Promise((resolve) => mockR2Server.listen(0, '127.0.0.1', resolve));
+    const mockR2Endpoint = `http://127.0.0.1:${mockR2Server.address().port}`;
+    const mockR2Client = new R2Client({
+      enabled: true,
+      endpoint: mockR2Endpoint,
+      accessKeyId: 'mock_ak',
+      secretAccessKey: 'mock_sk',
+      bucket: 'mock-vtn-bucket',
+      region: 'auto'
+    });
+    const mockCloudSync = new CloudSync({
+      r2Client: mockR2Client,
+      configPath: path.join(testProfilesDir, 'mock_updater_r2.json'),
+      machineId: 'mock-updater-machine'
+    });
+
+    let simulatedActiveSessions = [];
+    const mockBmForUpdater = Object.create(app.browserManager);
+    mockBmForUpdater.cloudSync = mockCloudSync;
+    mockBmForUpdater.listActiveSessions = () => simulatedActiveSessions;
+
+    const updaterTestDir = path.join(testProfilesDir, 'updater_sandbox');
+    fs.mkdirSync(updaterTestDir, { recursive: true });
+    const targetExe = path.join(updaterTestDir, 'VTN-Anti-Browser.exe');
+    const oldBackupExe = path.join(updaterTestDir, 'VTN-Anti-Browser.old.exe');
+    const newStageExe = path.join(updaterTestDir, 'VTN-Anti-Browser.new.exe');
+    const releaseSourceExe = path.join(updaterTestDir, 'release_v1_1_0.exe');
+
+    const updaterOptions = {
+      targetExePath: targetExe,
+      exePath: releaseSourceExe,
+      minBytes: 1024,
+      autoRestartInSea: false,
+      currentVersion: '1.0.0'
+    };
+
+    const updaterServer = createApiServer({
+      db: app.db,
+      browserManager: mockBmForUpdater,
+      updaterOptions
+    });
+    await new Promise((resolve) => updaterServer.listen(0, '127.0.0.1', resolve));
+    const updaterBaseUrl = `http://127.0.0.1:${updaterServer.address().port}`;
+
+    try {
+      const originalBytes = Buffer.from('OLD_EXE_V1_0_0_' + 'A'.repeat(2048), 'utf8');
+      const releaseBytes = Buffer.from('NEW_EXE_V1_1_0_' + 'B'.repeat(3072), 'utf8');
+      fs.writeFileSync(targetExe, originalBytes);
+      fs.writeFileSync(releaseSourceExe, releaseBytes);
+
+      // Security Hardening: cross-origin GET /api/v1/updater/check must return 403 and no wildcard CORS
+      const evilUpdaterCheckRes = await fetch(`${updaterBaseUrl}/api/v1/updater/check`, {
+        headers: { Origin: 'https://evil.example.com' }
+      });
+      assert.strictEqual(evilUpdaterCheckRes.status, 403, 'Cross-origin GET /api/v1/updater/check must return 403');
+      assert.strictEqual(evilUpdaterCheckRes.headers.get('access-control-allow-origin'), null, 'Updater must not emit Access-Control-Allow-Origin for untrusted origin');
+
+      // Before publish: check returns hasRelease: false (and does not emit Access-Control-Allow-Origin: *)
+      const emptyCheckRes = await fetch(`${updaterBaseUrl}/api/v1/updater/check`);
+      assert.strictEqual(emptyCheckRes.status, 200);
+      assert.notStrictEqual(emptyCheckRes.headers.get('access-control-allow-origin'), '*', 'Updater must never emit wildcard CORS');
+      const emptyCheck = await emptyCheckRes.json();
+      assert.strictEqual(emptyCheck.ok, true);
+      assert.strictEqual(emptyCheck.hasRelease, false);
+      assert.strictEqual(emptyCheck.updateAvailable, false);
+      assert.strictEqual(emptyCheck.hasBackup, false);
+
+      // 9.3 publishRelease -> GET /api/v1/updater/check
+      const pubRes = await publishRelease(mockCloudSync, {
+        exePath: releaseSourceExe,
+        version: '1.1.0',
+        notes: 'E2E Test Release 1.1.0'
+      });
+      assert.strictEqual(pubRes.ok, true);
+      assert.strictEqual(pubRes.manifest.version, '1.1.0');
+      assert.strictEqual(pubRes.manifest.sizeBytes, releaseBytes.length);
+      assert(/^[a-f0-9]{64}$/.test(pubRes.manifest.sha256), 'Manifest must contain 64-char hex sha256');
+
+      const checkOldVer = await fetch(`${updaterBaseUrl}/api/v1/updater/check`).then((r) => r.json());
+      assert.strictEqual(checkOldVer.ok, true);
+      assert.strictEqual(checkOldVer.hasRelease, true);
+      assert.strictEqual(checkOldVer.updateAvailable, true, '1.1.0 must be newer than 1.0.0');
+      assert.strictEqual(checkOldVer.latestVersion, '1.1.0');
+      assert.strictEqual(checkOldVer.manifest.notes, 'E2E Test Release 1.1.0');
+
+      updaterOptions.currentVersion = '1.1.0';
+      const checkSameVer = await fetch(`${updaterBaseUrl}/api/v1/updater/check`).then((r) => r.json());
+      assert.strictEqual(checkSameVer.updateAvailable, false, 'Same version must report updateAvailable: false');
+      console.log('  [PASS] 9.2 publishRelease, local-only Origin guard & GET /api/v1/updater/check verified.');
+
+      // 9.4 Active session 409 conflict guard
+      simulatedActiveSessions = [{ profileId: 'running_test_profile' }];
+      const conflictApplyRes = await fetch(`${updaterBaseUrl}/api/v1/updater/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      assert.strictEqual(conflictApplyRes.status, 409, 'Active profiles must block /updater/apply with HTTP 409');
+      simulatedActiveSessions = [];
+
+      // 9.5 downloadAndStageUpdate via POST /api/v1/updater/apply (valid SHA-256)
+      const applyRes = await postJson(updaterBaseUrl, '/api/v1/updater/apply', {});
+      assert.strictEqual(applyRes.ok, true, `Apply failed: ${JSON.stringify(applyRes)}`);
+      assert.strictEqual(applyRes.applied, true);
+      assert.strictEqual(applyRes.sha256Verified, true);
+      assert.strictEqual(applyRes.version, '1.1.0');
+      assert.strictEqual(fs.existsSync(oldBackupExe), true, 'Backup .old.exe must be created');
+      assert.deepStrictEqual(fs.readFileSync(oldBackupExe), originalBytes, 'Backup .old.exe must contain original bytes');
+      assert.deepStrictEqual(fs.readFileSync(targetExe), releaseBytes, 'Target .exe must contain new release bytes');
+      assert.strictEqual(fs.existsSync(newStageExe), false, 'Staging .new.exe must be renamed away');
+      console.log('  [PASS] 9.3 Valid SHA-256 downloadAndStageUpdate & .old.exe backup verified.');
+
+      // 9.6 SHA-256 tamper rejection
+      const tamperedBytes = Buffer.from('TAMPERED_MALICIOUS_PAYLOAD_' + 'X'.repeat(3072), 'utf8');
+      mockR2Store.set(APP_BINARY_KEY, {
+        body: tamperedBytes,
+        contentType: 'application/octet-stream'
+      });
+
+      await assert.rejects(
+        () => downloadAndStageUpdate(mockCloudSync, { targetExePath: targetExe, autoRestartInSea: false }),
+        /SHA-256/
+      );
+      assert.strictEqual(fs.existsSync(newStageExe), false, 'Tampered .new.exe must be deleted immediately');
+      assert.deepStrictEqual(fs.readFileSync(targetExe), releaseBytes, 'Target .exe must remain untouched after tamper rejection');
+      console.log('  [PASS] 9.4 SHA-256 tamper rejection verified (corrupted download deleted, target untouched).');
+
+      // 9.7 rollbackUpdate via POST /api/v1/updater/rollback
+      const rollbackRes = await postJson(updaterBaseUrl, '/api/v1/updater/rollback', {});
+      assert.strictEqual(rollbackRes.ok, true, `Rollback failed: ${JSON.stringify(rollbackRes)}`);
+      assert.strictEqual(rollbackRes.rolledBack, true);
+      assert.deepStrictEqual(fs.readFileSync(targetExe), originalBytes, 'Rollback must restore original bytes from .old.exe');
+      assert.strictEqual(fs.existsSync(oldBackupExe), false, 'Backup .old.exe should be moved back to target');
+      console.log('  [PASS] 9.5 rollbackUpdate verified (original bytes restored).');
+    } finally {
+      await new Promise((resolve) => updaterServer.close(resolve));
+      await new Promise((resolve) => mockR2Server.close(resolve));
+    }
 
     console.log('\n=== ALL E2E VERIFICATION ASSERTIONS PASSED (100% NATIVE C++ SPOOFING & UI APP WINDOW) ===');
   } finally {

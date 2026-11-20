@@ -8,8 +8,9 @@ const path = require('path');
 const crypto = require('crypto');
 const { DatabaseSync } = require('node:sqlite');
 const { generateFingerprint, generateUniqueFingerprint, validateAndHealFingerprint } = require('./fingerprint-gen');
+const { DATA_DIR } = require('./paths');
 
-const DEFAULT_DB_PATH = path.resolve(__dirname, '..', '..', 'data', 'vnt_profiles.db');
+const DEFAULT_DB_PATH = path.join(DATA_DIR, 'vnt_profiles.db');
 
 class ProfileDatabase {
   constructor(dbPath = DEFAULT_DB_PATH) {
@@ -36,6 +37,23 @@ class ProfileDatabase {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         last_opened_at TEXT DEFAULT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ai_workflows (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        prompt TEXT DEFAULT '',
+        steps_json TEXT NOT NULL,
+        heal_count INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ai_audit_logs (
+        id TEXT PRIMARY KEY,
+        profile_id TEXT NOT NULL,
+        platform TEXT NOT NULL,
+        score INTEGER NOT NULL,
+        report_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
       );
     `);
   }
@@ -226,6 +244,131 @@ class ProfileDatabase {
       updatedAt: row.updated_at,
       lastOpenedAt: row.last_opened_at
     };
+  }
+
+  // ============================================================================
+  // AI Workflows CRUD
+  // ============================================================================
+
+  listWorkflows() {
+    const stmt = this.db.prepare('SELECT * FROM ai_workflows ORDER BY updated_at DESC');
+    return stmt.all().map((r) => this._deserializeWorkflowRow(r));
+  }
+
+  getWorkflow(id) {
+    const stmt = this.db.prepare('SELECT * FROM ai_workflows WHERE id = ?');
+    const row = stmt.get(String(id));
+    return row ? this._deserializeWorkflowRow(row) : null;
+  }
+
+  saveWorkflow(payload = {}) {
+    const id = payload.id ? String(payload.id) : `wf_${crypto.randomBytes(4).toString('hex')}`;
+    const existing = this.getWorkflow(id);
+    const now = new Date().toISOString();
+
+    const name = String(payload.name || (existing ? existing.name : '') || `Workflow ${id.slice(-4).toUpperCase()}`).trim();
+    const prompt = payload.prompt !== undefined ? String(payload.prompt) : (existing ? existing.prompt : '');
+    const stepsRaw = payload.steps !== undefined
+      ? payload.steps
+      : (payload.steps_json !== undefined ? payload.steps_json : (existing ? existing.steps : []));
+    const stepsJson = typeof stepsRaw === 'string' ? stepsRaw : JSON.stringify(Array.isArray(stepsRaw) ? stepsRaw : []);
+    const healCount = payload.healCount !== undefined
+      ? Number(payload.healCount) || 0
+      : (payload.heal_count !== undefined ? Number(payload.heal_count) || 0 : (existing ? existing.healCount : 0));
+    const createdAt = existing ? existing.createdAt : (payload.createdAt || payload.created_at || now);
+
+    const stmt = this.db.prepare(`
+      INSERT INTO ai_workflows (id, name, prompt, steps_json, heal_count, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        prompt = excluded.prompt,
+        steps_json = excluded.steps_json,
+        heal_count = excluded.heal_count,
+        updated_at = excluded.updated_at
+    `);
+    stmt.run(id, name, prompt, stepsJson, healCount, createdAt, now);
+    return this.getWorkflow(id);
+  }
+
+  deleteWorkflow(id) {
+    const stmt = this.db.prepare('DELETE FROM ai_workflows WHERE id = ?');
+    const info = stmt.run(String(id));
+    return info.changes > 0;
+  }
+
+  _deserializeWorkflowRow(row) {
+    let steps = [];
+    try { steps = JSON.parse(row.steps_json); } catch { steps = []; }
+    if (!Array.isArray(steps)) steps = [];
+    return {
+      id: row.id,
+      name: row.name,
+      prompt: row.prompt || '',
+      steps,
+      healCount: Number(row.heal_count) || 0,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  // ============================================================================
+  // AI Audit Logs CRUD
+  // ============================================================================
+
+  saveAuditLog(payload = {}) {
+    const id = payload.id ? String(payload.id) : `aud_${crypto.randomBytes(4).toString('hex')}`;
+    const profileId = String(payload.profileId || payload.profile_id || '');
+    const platform = String(payload.platform || 'General');
+    const score = Math.max(0, Math.min(100, Math.round(Number(payload.score) || 0)));
+    const reportObj = payload.report !== undefined
+      ? payload.report
+      : (payload.report_json !== undefined ? payload.report_json : payload);
+    const reportJson = typeof reportObj === 'string' ? reportObj : JSON.stringify(reportObj || {});
+    const createdAt = payload.createdAt || payload.created_at || new Date().toISOString();
+
+    const stmt = this.db.prepare(`
+      INSERT INTO ai_audit_logs (id, profile_id, platform, score, report_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, profileId, platform, score, reportJson, createdAt);
+
+    return {
+      id,
+      profileId,
+      platform,
+      score,
+      report: typeof reportObj === 'string' ? (() => { try { return JSON.parse(reportObj); } catch { return {}; } })() : (reportObj || {}),
+      createdAt
+    };
+  }
+
+  listAuditLogs(profileId, limit = 10) {
+    const safeLimit = Math.max(1, Math.min(100, Number(limit) || 10));
+    let rows;
+    if (profileId) {
+      const stmt = this.db.prepare(
+        'SELECT * FROM ai_audit_logs WHERE profile_id = ? ORDER BY created_at DESC LIMIT ?'
+      );
+      rows = stmt.all(String(profileId), safeLimit);
+    } else {
+      const stmt = this.db.prepare(
+        'SELECT * FROM ai_audit_logs ORDER BY created_at DESC LIMIT ?'
+      );
+      rows = stmt.all(safeLimit);
+    }
+    return rows.map((r) => {
+      let report = {};
+      try { report = JSON.parse(r.report_json); } catch { report = {}; }
+      return {
+        id: r.id,
+        profileId: r.profile_id,
+        platform: r.platform,
+        score: Number(r.score) || 0,
+        report,
+        createdAt: r.created_at
+      };
+    });
   }
 }
 

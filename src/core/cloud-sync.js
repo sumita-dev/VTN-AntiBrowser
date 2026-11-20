@@ -10,8 +10,9 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { R2Client, DEFAULT_R2_CONFIG_PATH } = require('./r2-client');
+const { BIN_DIR, DATA_DIR } = require('./paths');
 
-const MACHINE_ID_PATH = path.resolve(__dirname, '..', '..', 'data', 'machine_id.txt');
+const MACHINE_ID_PATH = path.join(DATA_DIR, 'machine_id.txt');
 
 function getMachineId() {
   if (fs.existsSync(MACHINE_ID_PATH)) {
@@ -284,7 +285,7 @@ class CloudSync {
       throw new Error('Cloudflare R2 is disabled or not configured in data/r2_config.json');
     }
 
-    const base = binBaseDir ? path.resolve(binBaseDir) : path.resolve(__dirname, '..', '..', 'bin');
+    const base = binBaseDir ? path.resolve(binBaseDir) : BIN_DIR;
     const kernelDir = path.resolve(base, '151-0007');
 
     if (!fs.existsSync(kernelDir)) {
@@ -332,7 +333,7 @@ class CloudSync {
       throw new Error('Cloudflare R2 is disabled or not configured in data/r2_config.json');
     }
 
-    const base = binBaseDir ? path.resolve(binBaseDir) : path.resolve(__dirname, '..', '..', 'bin');
+    const base = binBaseDir ? path.resolve(binBaseDir) : BIN_DIR;
     fs.mkdirSync(base, { recursive: true });
 
     const obj = await this.r2Client.getObject('system/bin_151-0007.tar.gz');

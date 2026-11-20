@@ -17,9 +17,10 @@ const {
   startProxyTunnel,
   resolveGeoIp
 } = require('./proxy-tunnel');
+const { BIN_DIR, DATA_DIR } = require('./paths');
 
-const DEFAULT_CHROME_EXE = path.resolve(__dirname, '..', '..', 'bin', '151-0007', 'chrome.exe');
-const DEFAULT_PROFILES_DIR = path.resolve(__dirname, '..', '..', 'data', 'profiles');
+const DEFAULT_CHROME_EXE = path.join(BIN_DIR, '151-0007', 'chrome.exe');
+const DEFAULT_PROFILES_DIR = path.join(DATA_DIR, 'profiles');
 
 function fetchCdpJson(port, endpoint = '/json/version', timeoutMs = 1500) {
   return new Promise((resolve, reject) => {

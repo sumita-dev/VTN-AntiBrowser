@@ -11,8 +11,9 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
+const { BIN_DIR } = require('./paths');
 
-const DEFAULT_GOST_EXE = path.resolve(__dirname, '..', '..', 'bin', 'Tool.exe');
+const DEFAULT_GOST_EXE = path.join(BIN_DIR, 'Tool.exe');
 
 /**
  * Finds a free local TCP port bound to 127.0.0.1.
